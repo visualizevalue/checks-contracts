@@ -22,6 +22,14 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
 // You need to export an object to set up your config
 // Go to https://hardhat.org/config/ to learn more
 
+const HARDHAT_NETWORK_CONFIG = {
+  chainId: 1337,
+  forking: {
+    url: process.env.MAINNET_URL || '',
+    blockNumber: 16406000,
+  },
+}
+
 const config = {
   solidity: "0.8.17",
   settings: {
@@ -36,9 +44,14 @@ const config = {
       accounts:
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
     },
+    localhost: {
+      ...HARDHAT_NETWORK_CONFIG,
+    },
+    hardhat: HARDHAT_NETWORK_CONFIG,
   },
   gasReporter: {
     enabled: process.env.REPORT_GAS !== undefined,
+    coinmarketcap: process.env.COINMARKETCAP_API_KEY,
     currency: "USD",
   },
   etherscan: {
