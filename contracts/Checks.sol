@@ -3,6 +3,7 @@ pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
+import "@openzeppelin/contracts/utils/Base64.sol";
 
 import "./Utilities.sol";
 
@@ -12,7 +13,7 @@ contract Checks is ERC721 {
     event Composite(
         uint256 indexed tokenId,
         uint256 indexed burnedId,
-        uint8 indexed checks,
+        uint8 indexed checks
     );
 
     string[80] public COLORS = [
@@ -35,7 +36,7 @@ contract Checks is ERC721 {
     struct Check {
         uint8 checks; // How many checks are in this
         uint8 checksTypeIndex; // How many checks are in this
-        uint16 consumed; // The tokenId that was merged into this one
+        uint16 composite; // The tokenId that was merged into this one
         uint32 seed; // Seed for the color randomisation
     }
 
@@ -43,11 +44,11 @@ contract Checks is ERC721 {
 
     constructor() ERC721("Checks", "Check") {
         // Link Checks to the Edition Contract
-        editionChecks = ERC721Burnable(0x34eebee6942d8def3c125458d1a86e0a897fd6f9);
+        editionChecks = ERC721Burnable(0x34eEBEE6942d8Def3c125458D1a86e0A897fd6f9);
     }
 
-    function mint(uint256[] tokenIds) public {
-        uint256 count = tokenIds.length
+    function mint(uint256[] calldata tokenIds) public {
+        uint256 count = tokenIds.length;
 
         // Make sure we have the Editions burn approval from the minter.
         require(editionChecks.isApprovedForAll(msg.sender, address(this)), "Edition burn not approved.");
@@ -61,12 +62,14 @@ contract Checks is ERC721 {
         for (uint i = 0; i < count; i++) {
             uint256 id = tokenIds[i];
             editionChecks.burn(id);
-            _checks[id] = new Check(80, 0, 0, uint16(keccak256(abi.encodePacked(msg.sender, id))));
+            uint256 seed = uint256(keccak256(abi.encodePacked(msg.sender, id)));
+            _checks[id] = Check(80, 0, 0, uint32(seed));
             _mint(msg.sender, id);
         }
     }
 
     function composite(uint256 tokenId, uint256 burnId) public {
+        require(tokenId != burnId, "Can't composit the same token.");
         require(
             _isApprovedOrOwner(msg.sender, tokenId) && _isApprovedOrOwner(msg.sender, burnId),
             "Not the owner or approved."
@@ -81,7 +84,7 @@ contract Checks is ERC721 {
         toKeep.checksTypeIndex += 1;
         toKeep.checks = TYPES[toKeep.checksTypeIndex];
         toKeep.seed = toKeep.seed + toBurn.seed;
-        toKeep.consumed = burnId;
+        toKeep.composite = uint16(burnId);
 
         // Perform the burn
         _burn(burnId);
@@ -90,14 +93,12 @@ contract Checks is ERC721 {
         emit Composite(tokenId, burnId, toKeep.checks);
     }
 
-    function compositeMany(uint256[] tokenPairs) public {
-        uint256 count = tokenPairs.length;
-        require(count % 2 == 0, "Invalid number of tokens to composite.");
+    function compositeMany(uint256[] calldata tokenIds, uint256[] calldata burnIds) public {
+        uint256 pairs = tokenIds.length;
+        require(pairs == burnIds.length, "Invalid number of tokens to composite.");
 
-        uint256 pairs = count/2;
         for (uint i = 0; i < pairs; i++) {
-            uint256 index = i*2;
-            composite(tokenPairs[index], tokenPairs[index + 1]);
+            composite(tokenIds[i], burnIds[i]);
         }
     }
 
@@ -145,7 +146,7 @@ contract Checks is ERC721 {
                     : 1;
     }
 
-    function _rowX(uint8 checks) internal pure returns (uint8) {
+    function _rowX(uint8 checks) internal pure returns (uint16) {
         return checks <= 1 || checks == 5
             ? 312
             : checks == 10
@@ -153,17 +154,16 @@ contract Checks is ERC721 {
                 : 204;
     }
 
-    function _rowY(uint8 checks) internal pure returns (uint8) {
+    function _rowY(uint8 checks) internal pure returns (uint16) {
         return checks >= 5 ? 168 : 312;
     }
 
-    function _colors(uint256 tokenId, Check memory check) internal view returns (string[]) {
-
-    }
-
-    function _fillAnimation(uint256 seed) internal view returns (string fill, string animation) {
-        uint256 colorIndex = random(seed, 0, 79);
-        string memory fill = COLORS[colorIndex];
+    function _fillAnimation(uint256 seed) internal view returns (
+        string memory fill,
+        string memory animation
+    ) {
+        uint256 colorIndex = utils.random(seed, 0, 79);
+        fill = COLORS[colorIndex];
         bytes memory fillAnimation;
         for (uint i = colorIndex; i < (colorIndex + 80); i++) {
             fillAnimation = abi.encodePacked(fillAnimation, COLORS[colorIndex % 80]);
@@ -172,47 +172,88 @@ contract Checks is ERC721 {
         return (fill, string(fillAnimation));
     }
 
+    // /// @dev generate indexes from both this and its composite check
+    // function _colorIndexes(uint256 tokenId, Check memory check)
+    //     internal view returns (uint256 count, uint256[] memory indexes)
+    // {
+    //     uint256 checksCount = check.checks;
+    //     uint256 possibleColors = check.composite > 0 ? checksCount * 2 : checksCount;
+    //     // uint256[checksCount] memory colorIndexes;
+    //     uint256[] memory colorIndexes;
+
+    //     for (uint i = 0; i < checksCount; i++) {
+    //         colorIndexes[i] = utils.random(tokenId + check.seed + i, 0, possibleColors - 1);
+    //     }
+
+    //     return (possibleColors, colorIndexes);
+    // }
+
+    // function _colors(uint256 tokenId, Check memory check) internal view returns (string[] memory) {
+    //     (uint256 count, uint256[] memory indexes) = _colorIndexes(tokenId, check);
+
+    //     // string[check.checks] memory colors;
+    //     string[] memory colors;
+    //     for (uint i = 0; i < check.checks; i++) {
+    //         colors[i] = COLORS[indexes[i]];
+    //     }
+
+    //     return colors;
+    // }
+
+    struct CheckRenderer {
+        string duration;
+        string scale;
+        uint16 rowX;
+        uint16 rowY;
+        uint8 spaceX;
+        uint8 spaceY;
+        uint8 perRow;
+        uint8 indexInRow;
+        uint8 isIndented;
+        bool indent;
+        bool isNewRow;
+    }
 
     function _generateChecks(uint256 tokenId, Check memory check) internal view returns (string memory) {
-        uint256 checksCount = check.checks;
+        uint8 checksCount = check.checks;
+        uint32 seed = check.seed;
 
         // Positioning
-        string memory scale = checksCount > 20 ? '1' : '2.8';
-        string memory spaceX = checksCount == 80 ? 36 : 72;
-        string memory spaceY = checksCount > 20 ? 36 : 72;
-        uint8 perRow = _perRow(checksCount);
-        uint256 rowX = _rowX(checksCount);
-        uint256 rowY = _rowY(checksCount);
-        bool indent = checksCount == 40;
+        CheckRenderer memory data;
+        data.scale = checksCount > 20 ? '1' : '2.8';
+        data.spaceX = checksCount == 80 ? 36 : 72;
+        data.spaceY = checksCount > 20 ? 36 : 72;
+        data.perRow = _perRow(checksCount);
+        data.rowX = _rowX(checksCount);
+        data.rowY = _rowY(checksCount);
+        data.indent = checksCount == 40;
 
         // Animation
-        string duration = uint2str(checksCount*3);
+        data.duration = utils.uint2str(checksCount*3);
 
         bytes memory checksBytes;
-        for (uint i = 0; i < checksCount; i++) {
+        for (uint8 i = 0; i < checksCount; i++) {
             // Positioning
-            uint8 indexInRow = i % perRow;
-            bool isNewRow = indexInRow == 0 && i > 0;
-            if (isNewRow) {
-                rowY += spaceY;
+            data.indexInRow = i % data.perRow;
+            data.isNewRow = data.indexInRow == 0 && i > 0;
+            if (data.isNewRow) {
+                data.rowY += data.spaceY;
             }
-            bool isIndented = indent && i % perRow == 0;
-            string memory translateX = uint2str(rowX + indexInRow * spaceX + isIndented * spaceX);
-            string memory translateY = uint2str(rowY);
+            data.isIndented = data.indent && i % data.perRow == 0 ? 1 : 0;
+            string memory translateX = utils.uint2str(data.rowX + data.indexInRow * data.spaceX + data.isIndented * data.spaceX);
+            string memory translateY = utils.uint2str(data.rowY);
 
             // Animation
-            string memory fill;
-            string memory fillAnimation;
-            (fill, animation) = _fillAnimation(tokenId + check.seed + i);
+            (string memory fill, string memory animation) = _fillAnimation(tokenId + seed + i);
 
             checksBytes = abi.encodePacked(checksBytes, abi.encodePacked(
                 '<g ',
                     'transform="translate(', translateX, ', ', translateY, ')"',
                 '>',
-                    '<path transform="scale(',scale,')" fill="',fill,'" d="',CHECKS_PATH,'">',
+                    '<path transform="scale(',data.scale,')" fill="',fill,'" d="',CHECKS_PATH,'">',
                         '<animate ',
                             'attributeName="fill" values="',animation,'" ',
-                            'dur="',duration,'s" begin="animation.begin" ',
+                            'dur="',data.duration,'s" begin="animation.begin" ',
                             'repeatCount="indefinite" ',
                         '/>',
                     '</path>',
@@ -245,7 +286,7 @@ contract Checks is ERC721 {
                     '/>',
                 '</rect>',
             '</svg>'
-        )
+        );
     }
 
     function _generateHTML(uint256 tokenId, Check memory check) internal view returns (bytes memory) {
@@ -273,6 +314,6 @@ contract Checks is ERC721 {
                 _generateSVG(tokenId, check),
             '</body>',
             '</html>'
-        )
+        );
     }
 }
