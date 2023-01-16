@@ -152,24 +152,25 @@ contract Checks is ERC721 {
     }
 
     /// @dev Generate indexes for the color slots of its parent (root being the COLORS themselves).
-    function _colorIndexes(Check memory check)
+    function _colorIndexes(uint8 divisorIndex, Check memory check)
         internal view returns (uint256, uint256[] memory)
     {
         (
             uint256 possibleColorChoices,
             uint256[] memory indexes
-        ) = _colorIndexesForDivisor(check.divisorIndex, check); // for 808
+        ) = _colorIndexesForDivisor(divisorIndex, check); // for 808
 
-        if (check.divisorIndex > 0) {
-            uint8 previousDivisor = check.divisorIndex - 1; // 0
+        if (divisorIndex > 0) {
+            uint8 previousDivisor = divisorIndex - 1; // 0
 
-            (, uint256[] memory parentIndexes) = _colorIndexesForDivisor(previousDivisor, check);
+            (, uint256[] memory parentIndexes) = _colorIndexes(previousDivisor, check);
 
             Check memory composited = _checks[check.composite[previousDivisor]];
-            (, uint256[] memory compositedIndexes) = _colorIndexesForDivisor(previousDivisor, composited);
+            (, uint256[] memory compositedIndexes) = _colorIndexes(previousDivisor, composited);
 
+            // Replace random indices with parent / root color indices
             uint8 count = DIVISORS[previousDivisor];
-            for (uint i = 0; i < check.checks; i++) {
+            for (uint i = 0; i < DIVISORS[divisorIndex]; i++) {
                 uint256 branchIndex = indexes[i] % count;
                 indexes[i] = indexes[i] < count
                     ? parentIndexes[branchIndex]
@@ -183,7 +184,8 @@ contract Checks is ERC721 {
     function colorIndexes(uint256 tokenId)
         external view returns (uint256 count, uint256[] memory indexes)
     {
-        return _colorIndexes(_checks[tokenId]);
+        Check memory check = _checks[tokenId];
+        return _colorIndexes(check.divisorIndex, check);
     }
 
     function colors(uint256 tokenId)
@@ -198,7 +200,7 @@ contract Checks is ERC721 {
             return zeroColors;
         }
 
-        (uint256 count, uint256[] memory indexes) = _colorIndexes(check);
+        (uint256 count, uint256[] memory indexes) = _colorIndexes(check.divisorIndex, check);
 
         // if (check.composite[check.divisorIndex] > 0) {
 
