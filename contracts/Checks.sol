@@ -36,11 +36,12 @@ contract Checks is ERC721 {
         '#6D2F22', '#535687', '#EE837D', '#E0C963', '#9DEFBF', '#60B1F4', '#EE828F', '#7A5AB4'
     ];
 
-    uint8[8] public LEVELS = [ 80, 40, 20, 10, 5, 4, 1, 0 ];
+    // TODO 0 = infinity, maybe call `zero` `infinity`
+    uint8[8] public DIVISORS = [ 80, 40, 20, 10, 5, 4, 1, 0 ];
 
     struct Check {
         uint8 checks; // How many checks are in this
-        uint8 level; // How many checks are in this
+        uint8 divisorIndex; // Easy access to next / previous divisor
         uint16[7] composite; // The tokenIds that were merged into this one
         uint32 seed; // Seed for the color randomisation
     }
@@ -69,7 +70,7 @@ contract Checks is ERC721 {
             editionChecks.burn(id);
             Check storage check = _checks[id];
             check.checks = 80;
-            check.level = 0;
+            check.divisorIndex = 0;
             check.seed = uint32(Utils.random(uint256(keccak256(abi.encodePacked(msg.sender, id))), 0, 4294967294)); // max is the highest uint32
             _mint(msg.sender, id);
         }
@@ -94,9 +95,9 @@ contract Checks is ERC721 {
         require(toKeep.checks > 0, "Can't composite a black check");
 
         // Composite our check
-        toKeep.composite[toKeep.level] = uint16(burnId);
-        toKeep.level += 1;
-        toKeep.checks = LEVELS[toKeep.level];
+        toKeep.composite[toKeep.divisorIndex] = uint16(burnId);
+        toKeep.divisorIndex += 1;
+        toKeep.checks = DIVISORS[toKeep.divisorIndex];
 
         // Perform the burn
         _burn(burnId);
@@ -125,7 +126,7 @@ contract Checks is ERC721 {
         uint256 id = tokenIds[0];
         Check storage check = _checks[id];
         check.checks = 0;
-        check.level = 7;
+        check.divisorIndex = 7;
 
         // Burn all 63 other Checks.
         for (uint i = 1; i < count; i++) {
@@ -136,19 +137,47 @@ contract Checks is ERC721 {
         emit Zero(id, tokenIds[1:]);
     }
 
+    function _colorIndexesForDivisor(uint8 divisorIndex, Check memory check)
+        internal view returns (uint256, uint256[] memory)
+    {
+        uint256 checksCount = DIVISORS[divisorIndex];
+        uint256 possibleColorChoices = divisorIndex > 0 ? DIVISORS[divisorIndex - 1] * 2 : 80;
+
+        uint256[] memory indexes = new uint256[](checksCount);
+        for (uint i = 0; i < checksCount; i++) {
+            indexes[i] = Utils.random(check.seed + i, 0, possibleColorChoices - 1);
+        }
+
+        return (possibleColorChoices, indexes);
+    }
+
     /// @dev Generate indexes for the color slots of its parent (root being the COLORS themselves).
     function _colorIndexes(Check memory check)
         internal view returns (uint256, uint256[] memory)
     {
-        uint256 checksCount = check.checks;
-        uint256 possibleColors = check.level > 0 ? LEVELS[check.level - 1] * 2 : 80;
+        (
+            uint256 possibleColorChoices,
+            uint256[] memory indexes
+        ) = _colorIndexesForDivisor(check.divisorIndex, check); // for 808
 
-        uint256[] memory indexes = new uint256[](checksCount);
-        for (uint i = 0; i < checksCount; i++) {
-            indexes[i] = Utils.random(check.seed + i, 0, possibleColors - 1);
+        if (check.divisorIndex > 0) {
+            uint8 previousDivisor = check.divisorIndex - 1; // 0
+
+            (, uint256[] memory parentIndexes) = _colorIndexesForDivisor(previousDivisor, check);
+
+            Check memory composited = _checks[check.composite[previousDivisor]];
+            (, uint256[] memory compositedIndexes) = _colorIndexesForDivisor(previousDivisor, composited);
+
+            uint8 count = DIVISORS[previousDivisor];
+            for (uint i = 0; i < check.checks; i++) {
+                uint256 branchIndex = indexes[i] % count;
+                indexes[i] = indexes[i] < count
+                    ? parentIndexes[branchIndex]
+                    : compositedIndexes[branchIndex];
+            }
         }
 
-        return (possibleColors, indexes);
+        return (possibleColorChoices, indexes);
     }
 
     function colorIndexes(uint256 tokenId)
@@ -161,17 +190,24 @@ contract Checks is ERC721 {
         external view returns (string[] memory)
     {
         Check memory check = _checks[tokenId];
+
+        // A fully composited check has no color.
+        if (check.checks == 0) {
+            string[] memory zeroColors;
+            zeroColors[0] = '#FFFFFF';
+            return zeroColors;
+        }
+
         (uint256 count, uint256[] memory indexes) = _colorIndexes(check);
 
-        if (check.composite[check.level] > 0) {
+        // if (check.composite[check.divisorIndex] > 0) {
 
-        }
+        // }
 
         string[] memory checkColors = new string[](check.checks);
         for (uint i = 0; i < indexes.length; i++) {
             // FIXME nah
             checkColors[i] = COLORS[indexes[i]];
-            console.log(checkColors[i]);
         }
 
         return checkColors;
