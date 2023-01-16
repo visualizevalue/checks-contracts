@@ -1,15 +1,15 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-library utils {
-    // generates a random number between two values
-    function random(uint256 input, uint256 min, uint256 max) internal pure returns (uint256) {
+library Utils {
+    /// @dev Pseudorandom number based on input within bounds
+    function random(uint256 input, uint256 min, uint256 max) public pure returns (uint256) {
         uint256 randRange = max - min;
         return max - (uint256(keccak256(abi.encodePacked(input))) % randRange) - 1;
     }
 
-    // converts an unsigned integer to a string
-    function uint2str(uint256 _i) internal pure returns (string memory _uintAsString) {
+    /// @dev Convert an integer to a string
+    function uint2str(uint256 _i) public pure returns (string memory _uintAsString) {
         if (_i == 0) {
             return "0";
         }
