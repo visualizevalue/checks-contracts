@@ -125,11 +125,13 @@ library ChecksArt {
         return checks >= 5 ? 168 : 312;
     }
 
-    function fillAnimation(uint256 seed, string[80] memory COLORS) public pure returns (
+    function fillAnimation(uint256 seed, string[80] memory COLORS) public view returns (
         string memory fill,
         string memory animation
     ) {
         uint256 colorIndex = Utils.random(seed, 0, 79);
+        console.log('colorIndex');
+        console.log(colorIndex);
         fill = COLORS[colorIndex];
         bytes memory values;
         for (uint i = colorIndex; i < (colorIndex + 80); i++) {
@@ -139,54 +141,53 @@ library ChecksArt {
         return (fill, string(values));
     }
 
-    function generateChecks(CheckRenderData memory data, string[80] memory COLORS) public pure returns (string memory) {
+    function generateChecks(CheckRenderData memory data, string[80] memory COLORS) public view returns (string memory) {
+        // TODO: Do via colors array
+        // colors()
+
         bytes memory checksBytes;
         for (uint8 i = 0; i < data.checksCount; i++) {
-            // Positioning
+            // Row Positioning
             data.indexInRow = i % data.perRow;
             data.isNewRow = data.indexInRow == 0 && i > 0;
-            if (data.isNewRow) {
-                data.rowY += data.spaceY;
 
-                if (data.indent) {
-                    if (i == 0) {
-                        data.rowX += data.spaceX / 2;
-                    }
+            // Offsets
+            if (data.isNewRow) data.rowY += data.spaceY;
+            if (data.isNewRow && data.indent) {
+                if (i == 0) {
+                    data.rowX += data.spaceX / 2;
+                }
 
-                    if (i % (data.perRow * 2) == 0) {
-                        data.rowX -= data.spaceX / 2;
-                    } else {
-                        data.rowX += data.spaceX / 2;
-                    }
+                if (i % (data.perRow * 2) == 0) {
+                    data.rowX -= data.spaceX / 2;
+                } else {
+                    data.rowX += data.spaceX / 2;
                 }
             }
-            // data.isIndented = data.indent
-            //     ? ((i % data.perRow) == 0)
-            //         ? 1
-            //         : 0
-            //     : 0;
-            // // data.isIndented = data.indent ? ((i % data.perRow) == 0) ? 1 : 0 : 0;
-            string memory translateX = Utils.uint2str(
-                data.rowX +
-                data.indexInRow * data.spaceX
-                // data.isIndented * data.spaceX * 2
-            );
+            string memory translateX = Utils.uint2str(data.rowX + data.indexInRow * data.spaceX);
             string memory translateY = Utils.uint2str(data.rowY);
 
-            // Animation
+            // Color & Animation
+            console.log('HEEERREEEE!!!');
+            console.log(data.seed);
+            console.log(data.checksCount);
+            console.log(i);
+            console.log(data.seed + data.checksCount + i);
             (string memory fill, string memory animation) = fillAnimation(data.seed + data.checksCount + i, COLORS);
+            // (string memory fill,) = fillAnimation(data.seed + data.checksCount + i, COLORS);
+            console.log('PASSEDHEEERREEEE!!!');
 
             checksBytes = abi.encodePacked(checksBytes, abi.encodePacked(
-                '<g ',
-                    'transform="translate(', translateX, ', ', translateY, ')"',
-                '>',
-                    '<path transform="scale(',data.scale,')" fill="',fill,'" d="',CHECKS_PATH,'">',
+                '<g transform="translate(', translateX, ', ', translateY, ')">',
+                    // '<path transform="scale(',data.scale,')" fill="',fill,'" d="',CHECKS_PATH,'">',
+                    '<use href="#check" transform="scale(',data.scale,')" fill="',fill,'">',
                         '<animate ',
                             'attributeName="fill" values="',animation,'" ',
                             'dur="240s" begin="animation.begin" ',
                             'repeatCount="indefinite" ',
                         '/>',
-                    '</path>',
+                    '</use>'
+                    // '</path>',
                 '</g>'
             ));
         }
@@ -229,6 +230,9 @@ library ChecksArt {
                 'fill="none" xmlns="http://www.w3.org/2000/svg" ',
                 'style="width:100%;background:#EFEFEF;"',
             '>',
+                '<defs>',
+                    '<path id="check" d="',CHECKS_PATH,'"></path>',
+                '</defs>',
                 '<rect width="680" height="680" fill="#EFEFEF" />',
                 '<rect x="188" y="152" width="304" height="376" fill="white"/>',
                 generateChecks(data, COLORS),

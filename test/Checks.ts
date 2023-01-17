@@ -191,7 +191,18 @@ describe('Checks', () => {
       fs.writeFileSync('test/dist/808_10.svg', svg)
     })
 
-    it.only('Should render 40s correctly', async () => {
+    it.only('Should render 80s correctly', async () => {
+      const { checks, jalil } = await loadFixture(mintedFixture)
+
+      // const tokens = [808, 1444]
+      const tokens = [1444, 808]
+
+      for (const id of tokens) {
+        fs.writeFileSync(`test/dist/${id}_80.svg`, await checks.svg(id))
+      }
+    })
+
+    it('Should render 40s correctly', async () => {
       const { checks, jalil } = await loadFixture(mintedFixture)
 
       const tokens = [808, 1444]
