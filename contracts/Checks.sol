@@ -86,10 +86,9 @@ contract Checks is IChecks, ERC721 {
         toKeep.checks = DIVISORS[toKeep.divisorIndex];
 
         // Perform the burn
-        console.log('ownerOf(burnId)');
-        console.log(ownerOf(burnId));
         console.log('burning');
         console.log(burnId);
+        console.log(ownerOf(burnId));
         _burn(burnId);
 
         // Notify composite
@@ -127,61 +126,6 @@ contract Checks is IChecks, ERC721 {
         emit Zero(id, tokenIds[1:]);
     }
 
-    // /// @dev Generate indexes for the color slots of its parent (root being the COLORS themselves).
-    // function _colorIndexes(uint8 divisorIndex, Check memory check)
-    //     internal view returns (uint256[] memory)
-    // {
-    //     uint256 checksCount = DIVISORS[divisorIndex];
-    //     uint256 possibleColorChoices = divisorIndex > 0 ? DIVISORS[divisorIndex - 1] * 2 : 80;
-
-    //     uint256[] memory indexes = new uint256[](checksCount);
-    //     for (uint i = 0; i < checksCount; i++) {
-    //         indexes[i] = Utils.random(check.seed + i, 0, possibleColorChoices - 1);
-    //     }
-
-    //     if (divisorIndex > 0) {
-    //         uint8 previousDivisor = divisorIndex - 1;
-
-    //         uint256[] memory parentIndexes = _colorIndexes(previousDivisor, check);
-
-    //         Check memory composited = checks.all[check.composite[previousDivisor]];
-    //         uint256[] memory compositedIndexes = _colorIndexes(previousDivisor, composited);
-
-    //         // Replace random indices with parent / root color indices
-    //         uint8 count = DIVISORS[previousDivisor];
-    //         for (uint i = 0; i < DIVISORS[divisorIndex]; i++) {
-    //             uint256 branchIndex = indexes[i] % count;
-    //             indexes[i] = indexes[i] < count
-    //                 ? parentIndexes[branchIndex]
-    //                 : compositedIndexes[branchIndex];
-    //         }
-    //     }
-
-    //     return indexes;
-    // }
-
-    // function _colors(uint256 tokenId) internal view returns (string[] memory) {
-    //     Check memory check = checks.all[tokenId];
-
-    //     // A fully composited check has no color.
-    //     if (check.checks == 0) {
-    //         string[] memory zeroColors;
-    //         zeroColors[0] = '#FFFFFF';
-    //         return zeroColors;
-    //     }
-
-    //     // Fetch the indices on the original color mapping.
-    //     uint256[] memory indexes = _colorIndexes(check.divisorIndex, check);
-
-    //     // Map over to get the colors.
-    //     string[] memory checkColors = new string[](check.checks);
-    //     for (uint i = 0; i < indexes.length; i++) {
-    //         checkColors[i] = COLORS[indexes[i]];
-    //     }
-
-    //     return checkColors;
-    // }
-
     function colorIndexes(uint256 tokenId)
         external view returns (uint256[] memory indexes)
     {
@@ -189,23 +133,21 @@ contract Checks is IChecks, ERC721 {
         return ChecksArt.colorIndexes(check.divisorIndex, check, DIVISORS, checks);
     }
 
-    // function colors(uint256 tokenId) external view returns (string[] memory)
-    // {
-    //     return _colors(tokenId);
-    // }
-
-    function tokenURI(uint256 tokenId) public view override returns (string memory) {
-        _requireMinted(tokenId);
-
-        return ChecksArt.tokenURI(tokenId, checks.all[tokenId], COLORS);
+    function colors(uint256 tokenId) external view returns (string[] memory)
+    {
+        Check memory check = checks.all[tokenId];
+        return ChecksArt.colors(check, DIVISORS, checks, COLORS);
     }
 
-    function svg(uint256 tokenId) public view returns (string memory) {
+    // function tokenURI(uint256 tokenId) public view override returns (string memory) {
+    //     _requireMinted(tokenId);
+
+    //     return ChecksArt.tokenURI(tokenId, checks.all[tokenId], COLORS);
+    // }
+
+    function svg(uint256 tokenId) external view returns (string memory) {
         console.log(tokenId);
-        console.log(tokenId);
-        console.log(ownerOf(tokenId));
         _requireMinted(tokenId);
-        console.log(tokenId);
         console.log(tokenId);
 
         return string(ChecksArt.generateSVG(checks.all[tokenId], COLORS));

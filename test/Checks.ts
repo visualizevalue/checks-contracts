@@ -29,6 +29,8 @@ describe('Checks', () => {
     utils = await Utils.deploy()
     await utils.deployed()
 
+    console.log('UTILS DEPLOYED', utils.address)
+
     ChecksArt = await ethers.getContractFactory('ChecksArt', {
       libraries: {
         Utils: utils.address,
@@ -36,6 +38,8 @@ describe('Checks', () => {
     })
     checksArt = await ChecksArt.deploy()
     await checksArt.deployed()
+
+    console.log('CHECKSART DEPLOYED', checksArt.address)
 
     ChecksOriginals = await ethers.getContractFactory('Checks', {
       libraries: {
@@ -45,6 +49,8 @@ describe('Checks', () => {
     })
     checks = await ChecksOriginals.deploy()
     await checks.deployed()
+
+    console.log('CHECKS DEPLOYED')
 
     checksEditions = await ethers.getContractAt('ZoraEdition', EDITIONS)
 
@@ -135,7 +141,7 @@ describe('Checks', () => {
   })
 
   describe('Compositing', () => {
-    it.only('Should allow to composite originals', async () => {
+    it('Should allow to composite originals', async () => {
       const { checks, jalil } = await loadFixture(mintedFixture)
 
       expect(await checks.ownerOf(808)).to.equal(JALIL)
@@ -148,11 +154,16 @@ describe('Checks', () => {
         const indexes = await checks.colorIndexes(id)
         console.log(id, indexes.map(n => n.toNumber()))
 
+        console.log('hi', id)
+        // fs.writeFileSync(`test/dist/${id}_80.svg`, await checks.svg(id))
+
         if (index % 2 == 0) {
           await checks.connect(jalil).composite(tokens[index], tokens[index + 1])
 
           const indexes = await checks.colorIndexes(id)
           console.log(id, indexes.map(n => n.toNumber()))
+
+          fs.writeFileSync(`test/dist/${id}_40.svg`, await checks.svg(id))
         }
       }
 
@@ -165,16 +176,32 @@ describe('Checks', () => {
       i = await checks.colorIndexes(1967)
       console.log(1967, i.map(n => n.toNumber()))
 
+      fs.writeFileSync('test/dist/808_20.svg', await checks.svg(808))
+      fs.writeFileSync('test/dist/1967_20.svg', await checks.svg(1967))
+
       await checks.connect(jalil).composite(808, 1967);
       i = await checks.colorIndexes(808)
       console.log(808, i.map(n => n.toNumber()))
-      // console.log(await checks.colors(808))
+      console.log(await checks.colors(808))
 
-      // console.log(await checks.ownerOf(808))
-      // console.log(await checks.getCheck(808))
-      // const svg = await checks.svg(888)
-      // console.log(svg)
-      // fs.writeFileSync('808_20.svg', svg)
+      console.log(await checks.ownerOf(808))
+      console.log(await checks.getCheck(808))
+      const svg = await checks.svg(808)
+      console.log(svg)
+      fs.writeFileSync('test/dist/808_10.svg', svg)
+    })
+
+    it.only('Should render 40s correctly', async () => {
+      const { checks, jalil } = await loadFixture(mintedFixture)
+
+      const tokens = [808, 1444]
+
+      for (const [index, id] of tokens.entries()) {
+        if (index % 2 == 0) {
+          await checks.connect(jalil).composite(tokens[index], tokens[index + 1])
+          fs.writeFileSync(`test/dist/${id}_40.svg`, await checks.svg(id))
+        }
+      }
     })
   })
 })
