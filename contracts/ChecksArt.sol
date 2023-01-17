@@ -146,23 +146,20 @@ library ChecksArt {
         return checks >= 5 ? 168 : 312;
     }
 
-    // function fillAnimation(uint256 seed) public view returns (
-    //     string memory fill,
-    //     string memory animation
-    // ) {
-    //     string[81] memory allColors = COLORS();
+    function fillAnimation(CheckRenderData memory data, uint8 offset) public pure returns (
+        string memory animation
+    ) {
+        bytes memory values;
+        // for (uint i = 0; i < data.checksCount; i++) {
+        for (uint i = offset; i < offset + 10; i++) {
+            values = abi.encodePacked(values, data.colors[i % 80], ';');
+        }
 
-    //     uint256 colorIndex = Utils.random(seed, 0, 79);
-    //     console.log('colorIndex');
-    //     console.log(colorIndex);
-    //     fill = COLORS[colorIndex];
-    //     bytes memory values;
-    //     for (uint i = colorIndex; i < (colorIndex + 80); i++) {
-    //         values = abi.encodePacked(values, COLORS[i % 80], ';');
-    //     }
+        // Add initial color as last one for smooth animations
+        values = abi.encodePacked(values, data.colors[offset]);
 
-    //     return (fill, string(values));
-    // }
+        return string(values);
+    }
 
     function generateChecks(CheckRenderData memory data) public view returns (string memory) {
         bytes memory checksBytes;
@@ -202,8 +199,8 @@ library ChecksArt {
                     // '<path transform="scale(',data.scale,')" fill="',fill,'" d="',CHECKS_PATH,'">',
                     '<use href="#check" transform="scale(',data.scale,')" fill="',data.colors[i],'">',
                         '<animate ',
-                            'attributeName="fill" values="','" ',
-                            'dur="240s" begin="animation.begin" ',
+                            'attributeName="fill" values="',fillAnimation(data, i),'" ',
+                            'dur="30s" begin="animation.begin" ',
                             'repeatCount="indefinite" ',
                         '/>',
                     '</use>'
