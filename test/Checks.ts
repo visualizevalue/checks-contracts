@@ -135,7 +135,7 @@ describe('Checks', () => {
         composite: token.composite,
         seed: token.seed,
       })
-      const indexes = await checks.colorIndexes(1001)
+      const indexes = (await checks.colors(1001))[1]
       console.log(1001, indexes.map(n => n.toNumber()))
     })
   })
@@ -151,7 +151,7 @@ describe('Checks', () => {
       const tokens = [808, 1444, 1750, 1909, 1967, 2244, 2567, 3325]
 
       for (const [index, id] of tokens.entries()) {
-        const indexes = await checks.colorIndexes(id)
+        const indexes = (await checks.colors(id))[1]
         console.log(id, indexes.map(n => n.toNumber()))
 
         console.log('hi', id)
@@ -160,7 +160,7 @@ describe('Checks', () => {
         if (index % 2 == 0) {
           await checks.connect(jalil).composite(tokens[index], tokens[index + 1])
 
-          const indexes = await checks.colorIndexes(id)
+          const indexes = (await checks.colors(id))[1]
           console.log(id, indexes.map(n => n.toNumber()))
 
           fs.writeFileSync(`test/dist/${id}_40.svg`, await checks.svg(id))
@@ -170,17 +170,17 @@ describe('Checks', () => {
       await checks.connect(jalil).composite(808, 1750)
       await checks.connect(jalil).composite(1967, 2567)
 
-      let i = await checks.colorIndexes(808)
+      let i = (await checks.colors(808))[1]
       console.log(808, i.map(n => n.toNumber()));
 
-      i = await checks.colorIndexes(1967)
+      i = (await checks.colors(1967))[1]
       console.log(1967, i.map(n => n.toNumber()))
 
       fs.writeFileSync('test/dist/808_20.svg', await checks.svg(808))
       fs.writeFileSync('test/dist/1967_20.svg', await checks.svg(1967))
 
       await checks.connect(jalil).composite(808, 1967);
-      i = await checks.colorIndexes(808)
+      i = (await checks.colors(808))[1]
       console.log(808, i.map(n => n.toNumber()))
       console.log(await checks.colors(808))
 
