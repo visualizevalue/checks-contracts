@@ -2,26 +2,16 @@
 pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
-// import "@openzeppelin/contracts/Utils/Base64.sol";
 
+import './IChecksEdition.sol';
+import './IChecks.sol';
+import './ChecksArt.sol';
 import "./Utilities.sol";
 
 import "hardhat/console.sol";
 
-contract Checks is ERC721 {
-    ERC721Burnable public editionChecks;
-
-    event Composite(
-        uint256 indexed tokenId,
-        uint256 indexed burnedId,
-        uint8 indexed checks
-    );
-
-    event Zero(
-        uint256 indexed tokenId,
-        uint256[] indexed burnedIds
-    );
+contract Checks is IChecks, ERC721 {
+    IChecksEdition public editionChecks;
 
     string[80] public COLORS = [
         '#DB395E', '#525EAA', '#977A31', '#2E668B', '#33758D', '#4068C1', '#F2A43A', '#ED7C30',
@@ -39,18 +29,11 @@ contract Checks is ERC721 {
     // TODO 0 = infinity, maybe call `zero` `infinity`
     uint8[8] public DIVISORS = [ 80, 40, 20, 10, 5, 4, 1, 0 ];
 
-    struct Check {
-        uint8 checks; // How many checks are in this
-        uint8 divisorIndex; // Easy access to next / previous divisor
-        uint16[7] composite; // The tokenIds that were merged into this one
-        uint32 seed; // Seed for the color randomisation
-    }
-
-    mapping(uint256 => Check) private _checks;
+    Data checks;
 
     constructor() ERC721("Checks", "Check") {
         // Link Checks to the Edition Contract
-        editionChecks = ERC721Burnable(0x34eEBEE6942d8Def3c125458D1a86e0A897fd6f9);
+        editionChecks = IChecksEdition(0x34eEBEE6942d8Def3c125458D1a86e0A897fd6f9);
     }
 
     function mint(uint256[] calldata tokenIds) public {
@@ -68,7 +51,7 @@ contract Checks is ERC721 {
         for (uint i = 0; i < count; i++) {
             uint256 id = tokenIds[i];
             editionChecks.burn(id);
-            Check storage check = _checks[id];
+            Check storage check = checks.all[id];
             check.checks = 80;
             check.divisorIndex = 0;
             check.seed = uint32(Utils.random(uint256(keccak256(abi.encodePacked(msg.sender, id))), 0, 4294967294)); // max is the highest uint32
@@ -79,7 +62,10 @@ contract Checks is ERC721 {
     function getCheck(uint256 tokenId) external view returns (Check memory) {
         _requireMinted(tokenId);
 
-        return _checks[tokenId];
+        console.log('getCheck ownerOf(tokenId)');
+        console.log(ownerOf(tokenId));
+
+        return checks.all[tokenId];
     }
 
     function composite(uint256 tokenId, uint256 burnId) public {
@@ -89,8 +75,8 @@ contract Checks is ERC721 {
             "Not the owner or approved"
         );
 
-        Check storage toKeep = _checks[tokenId];
-        Check storage toBurn = _checks[tokenId];
+        Check storage toKeep = checks.all[tokenId];
+        Check storage toBurn = checks.all[tokenId];
         require(toKeep.checks == toBurn.checks, "Can only composite from same type");
         require(toKeep.checks > 0, "Can't composite a black check");
 
@@ -100,10 +86,14 @@ contract Checks is ERC721 {
         toKeep.checks = DIVISORS[toKeep.divisorIndex];
 
         // Perform the burn
+        console.log('ownerOf(burnId)');
+        console.log(ownerOf(burnId));
+        console.log('burning');
+        console.log(burnId);
         _burn(burnId);
 
         // Notify composite
-        emit Composite(tokenId, burnId, toKeep.checks);
+        emit IChecks.Composite(tokenId, burnId, toKeep.checks);
     }
 
     function compositeMany(uint256[] calldata tokenIds, uint256[] calldata burnIds) public {
@@ -119,12 +109,12 @@ contract Checks is ERC721 {
         uint256 count = tokenIds.length;
         require(count == 64, "Final composite requires 64 single Checks");
         for (uint i = 0; i < count; i++) {
-            require(_checks[tokenIds[i]].checks == 1, "Non-single Check used");
+            require(checks.all[tokenIds[i]].checks == 1, "Non-single Check used");
         }
 
         // Complete final composite.
         uint256 id = tokenIds[0];
-        Check storage check = _checks[id];
+        Check storage check = checks.all[id];
         check.checks = 0;
         check.divisorIndex = 7;
 
@@ -137,280 +127,87 @@ contract Checks is ERC721 {
         emit Zero(id, tokenIds[1:]);
     }
 
-    function _colorIndexesForDivisor(uint8 divisorIndex, Check memory check)
-        internal view returns (uint256, uint256[] memory)
-    {
-        uint256 checksCount = DIVISORS[divisorIndex];
-        uint256 possibleColorChoices = divisorIndex > 0 ? DIVISORS[divisorIndex - 1] * 2 : 80;
+    // /// @dev Generate indexes for the color slots of its parent (root being the COLORS themselves).
+    // function _colorIndexes(uint8 divisorIndex, Check memory check)
+    //     internal view returns (uint256[] memory)
+    // {
+    //     uint256 checksCount = DIVISORS[divisorIndex];
+    //     uint256 possibleColorChoices = divisorIndex > 0 ? DIVISORS[divisorIndex - 1] * 2 : 80;
 
-        uint256[] memory indexes = new uint256[](checksCount);
-        for (uint i = 0; i < checksCount; i++) {
-            indexes[i] = Utils.random(check.seed + i, 0, possibleColorChoices - 1);
-        }
+    //     uint256[] memory indexes = new uint256[](checksCount);
+    //     for (uint i = 0; i < checksCount; i++) {
+    //         indexes[i] = Utils.random(check.seed + i, 0, possibleColorChoices - 1);
+    //     }
 
-        return (possibleColorChoices, indexes);
-    }
+    //     if (divisorIndex > 0) {
+    //         uint8 previousDivisor = divisorIndex - 1;
 
-    /// @dev Generate indexes for the color slots of its parent (root being the COLORS themselves).
-    function _colorIndexes(uint8 divisorIndex, Check memory check)
-        internal view returns (uint256, uint256[] memory)
-    {
-        (
-            uint256 possibleColorChoices,
-            uint256[] memory indexes
-        ) = _colorIndexesForDivisor(divisorIndex, check); // for 808
+    //         uint256[] memory parentIndexes = _colorIndexes(previousDivisor, check);
 
-        if (divisorIndex > 0) {
-            uint8 previousDivisor = divisorIndex - 1; // 0
+    //         Check memory composited = checks.all[check.composite[previousDivisor]];
+    //         uint256[] memory compositedIndexes = _colorIndexes(previousDivisor, composited);
 
-            (, uint256[] memory parentIndexes) = _colorIndexes(previousDivisor, check);
+    //         // Replace random indices with parent / root color indices
+    //         uint8 count = DIVISORS[previousDivisor];
+    //         for (uint i = 0; i < DIVISORS[divisorIndex]; i++) {
+    //             uint256 branchIndex = indexes[i] % count;
+    //             indexes[i] = indexes[i] < count
+    //                 ? parentIndexes[branchIndex]
+    //                 : compositedIndexes[branchIndex];
+    //         }
+    //     }
 
-            Check memory composited = _checks[check.composite[previousDivisor]];
-            (, uint256[] memory compositedIndexes) = _colorIndexes(previousDivisor, composited);
+    //     return indexes;
+    // }
 
-            // Replace random indices with parent / root color indices
-            uint8 count = DIVISORS[previousDivisor];
-            for (uint i = 0; i < DIVISORS[divisorIndex]; i++) {
-                uint256 branchIndex = indexes[i] % count;
-                indexes[i] = indexes[i] < count
-                    ? parentIndexes[branchIndex]
-                    : compositedIndexes[branchIndex];
-            }
-        }
+    // function _colors(uint256 tokenId) internal view returns (string[] memory) {
+    //     Check memory check = checks.all[tokenId];
 
-        return (possibleColorChoices, indexes);
-    }
+    //     // A fully composited check has no color.
+    //     if (check.checks == 0) {
+    //         string[] memory zeroColors;
+    //         zeroColors[0] = '#FFFFFF';
+    //         return zeroColors;
+    //     }
+
+    //     // Fetch the indices on the original color mapping.
+    //     uint256[] memory indexes = _colorIndexes(check.divisorIndex, check);
+
+    //     // Map over to get the colors.
+    //     string[] memory checkColors = new string[](check.checks);
+    //     for (uint i = 0; i < indexes.length; i++) {
+    //         checkColors[i] = COLORS[indexes[i]];
+    //     }
+
+    //     return checkColors;
+    // }
 
     function colorIndexes(uint256 tokenId)
-        external view returns (uint256 count, uint256[] memory indexes)
+        external view returns (uint256[] memory indexes)
     {
-        Check memory check = _checks[tokenId];
-        return _colorIndexes(check.divisorIndex, check);
+        Check memory check = checks.all[tokenId];
+        return ChecksArt.colorIndexes(check.divisorIndex, check, DIVISORS, checks);
     }
 
-    function colors(uint256 tokenId)
-        external view returns (string[] memory)
-    {
-        Check memory check = _checks[tokenId];
+    // function colors(uint256 tokenId) external view returns (string[] memory)
+    // {
+    //     return _colors(tokenId);
+    // }
 
-        // A fully composited check has no color.
-        if (check.checks == 0) {
-            string[] memory zeroColors;
-            zeroColors[0] = '#FFFFFF';
-            return zeroColors;
-        }
+    function tokenURI(uint256 tokenId) public view override returns (string memory) {
+        _requireMinted(tokenId);
 
-        (uint256 count, uint256[] memory indexes) = _colorIndexes(check.divisorIndex, check);
-
-        // if (check.composite[check.divisorIndex] > 0) {
-
-        // }
-
-        string[] memory checkColors = new string[](check.checks);
-        for (uint i = 0; i < indexes.length; i++) {
-            // FIXME nah
-            checkColors[i] = COLORS[indexes[i]];
-        }
-
-        return checkColors;
+        return ChecksArt.tokenURI(tokenId, checks.all[tokenId], COLORS);
     }
 
-    // function tokenURI(uint256 tokenId) public view override returns (string memory) {
-    //     _requireMinted(tokenId);
+    function svg(uint256 tokenId) public view returns (string memory) {
+        console.log(tokenId);
+        console.log(tokenId);
+        console.log(ownerOf(tokenId));
+        _requireMinted(tokenId);
+        console.log(tokenId);
+        console.log(tokenId);
 
-    //     Check memory check = _checks[tokenId];
-
-    //     bytes memory metadata = abi.encodePacked(
-    //         '{',
-    //             '"name": "Checks ', tokenId, '",',
-    //             '"description": "This artwork may or may not be notable",',
-    //             '"image": ',
-    //                 '"data:image/svg+xml;base64,',
-    //                 Base64.encode(_generateSVG(tokenId, check)),
-    //                 '"',
-    //             '"animation_url": ',
-    //                 '"data:text/html;base64,',
-    //                 Base64.encode(_generateHTML(tokenId, check)),
-    //                 '"',
-    //         '}'
-    //     );
-
-    //     return string(
-    //         abi.encodePacked(
-    //             "data:application/json;base64,",
-    //             Base64.encode(metadata)
-    //         )
-    //     );
-    // }
-
-    // function generateSVG(uint256 tokenId) public view returns (string memory) {
-    //     _requireMinted(tokenId);
-
-    //     return string(_generateSVG(tokenId, _checks[tokenId]));
-    // }
-
-    // function _perRow(uint8 checks) internal pure returns (uint8) {
-    //     return checks == 80
-    //         ? 8
-    //         : checks >= 20 || checks == 4
-    //             ? 4
-    //             : checks == 10
-    //                 ? 2
-    //                 : 1;
-    // }
-
-    // function _rowX(uint8 checks) internal pure returns (uint16) {
-    //     return checks <= 1 || checks == 5
-    //         ? 312
-    //         : checks == 10
-    //             ? 276
-    //             : 204;
-    // }
-
-    // function _rowY(uint8 checks) internal pure returns (uint16) {
-    //     return checks >= 5 ? 168 : 312;
-    // }
-
-    // function _fillAnimation(uint256 seed) internal view returns (
-    //     string memory fill,
-    //     string memory animation
-    // ) {
-    //     uint256 colorIndex = Utils.random(seed, 0, 79);
-    //     fill = COLORS[colorIndex];
-    //     bytes memory fillAnimation;
-    //     for (uint i = colorIndex; i < (colorIndex + 80); i++) {
-    //         fillAnimation = abi.encodePacked(fillAnimation, COLORS[colorIndex % 80]);
-    //     }
-
-    //     return (fill, string(fillAnimation));
-    // }
-
-    // // function _colors(uint256 tokenId, Check memory check) internal view returns (string[] memory) {
-    // //     (uint256 count, uint256[] memory indexes) = _colorIndexes(tokenId, check);
-
-    // //     // string[check.checks] memory colors;
-    // //     string[] memory colors;
-    // //     for (uint i = 0; i < check.checks; i++) {
-    // //         colors[i] = COLORS[indexes[i]];
-    // //     }
-
-    // //     return colors;
-    // // }
-
-    // struct CheckRenderData {
-    //     string duration;
-    //     string scale;
-    //     uint16 rowX;
-    //     uint16 rowY;
-    //     uint8 spaceX;
-    //     uint8 spaceY;
-    //     uint8 perRow;
-    //     uint8 indexInRow;
-    //     uint8 isIndented;
-    //     bool indent;
-    //     bool isNewRow;
-    // }
-
-    // function _generateChecks(uint256 tokenId, Check memory check) internal view returns (string memory) {
-    //     uint8 checksCount = check.checks;
-    //     uint32 seed = check.seed;
-
-    //     // Positioning
-    //     CheckRenderData memory data;
-    //     data.scale = checksCount > 20 ? '1' : '2.8';
-    //     data.spaceX = checksCount == 80 ? 36 : 72;
-    //     data.spaceY = checksCount > 20 ? 36 : 72;
-    //     data.perRow = _perRow(checksCount);
-    //     data.rowX = _rowX(checksCount);
-    //     data.rowY = _rowY(checksCount);
-    //     data.indent = checksCount == 40;
-
-    //     // Animation
-    //     data.duration = Utils.uint2str(checksCount*3);
-
-    //     bytes memory checksBytes;
-    //     for (uint8 i = 0; i < checksCount; i++) {
-    //         // Positioning
-    //         data.indexInRow = i % data.perRow;
-    //         data.isNewRow = data.indexInRow == 0 && i > 0;
-    //         if (data.isNewRow) {
-    //             data.rowY += data.spaceY;
-    //         }
-    //         data.isIndented = data.indent && i % data.perRow == 0 ? 1 : 0;
-    //         string memory translateX = Utils.uint2str(data.rowX + data.indexInRow * data.spaceX + data.isIndented * data.spaceX);
-    //         string memory translateY = Utils.uint2str(data.rowY);
-
-    //         // Animation
-    //         (string memory fill, string memory animation) = _fillAnimation(seed + checksCount + i);
-
-    //         checksBytes = abi.encodePacked(checksBytes, abi.encodePacked(
-    //             '<g ',
-    //                 'transform="translate(', translateX, ', ', translateY, ')"',
-    //             '>',
-    //                 '<path transform="scale(',data.scale,')" fill="',fill,'" d="',CHECKS_PATH,'">',
-    //                     '<animate ',
-    //                         'attributeName="fill" values="',animation,'" ',
-    //                         'dur="',data.duration,'s" begin="animation.begin" ',
-    //                         'repeatCount="indefinite" ',
-    //                     '/>',
-    //                 '</path>',
-    //             '</g>'
-    //         ));
-    //     }
-
-    //     return string(checksBytes);
-    // }
-
-    // function _generateSVG(uint256 tokenId, Check memory check) internal view returns (bytes memory) {
-    //     return abi.encodePacked(
-    //         '<svg ',
-    //             'viewBox="0 0 680 680" ',
-    //             'fill="none" xmlns="http://www.w3.org/2000/svg" ',
-    //             'style="width:100%;background:#EFEFEF;"',
-    //         '>',
-    //             '<rect width="680" height="680" fill="#EFEFEF" />',
-    //             '<rect x="188" y="152" width="304" height="376" fill="white"/>',
-    //             _generateChecks(tokenId, check),
-    //             '<rect width="680" height="680" fill="transparent">',
-    //                 '<animate',
-    //                     'attributeName="width"',
-    //                     'from="680"',
-    //                     'to="0"',
-    //                     'dur="0.2s"',
-    //                     'begin="click"',
-    //                     'fill="freeze"',
-    //                     'id="animation"',
-    //                 '/>',
-    //             '</rect>',
-    //         '</svg>'
-    //     );
-    // }
-
-    // function _generateHTML(uint256 tokenId, Check memory check) internal view returns (bytes memory) {
-    //     return abi.encodePacked(
-    //         '<!DOCTYPE html>',
-    //         '<html lang="en">',
-    //         '<head>',
-    //             '<meta charset="UTF-8">',
-    //             '<meta http-equiv="X-UA-Compatible" content="IE=edge">',
-    //             '<meta name="viewport" content="width=device-width, initial-scale=1.0">',
-    //             '<title>Check #1234</title>',
-    //             '<style>',
-    //                 'html,',
-    //                 'body {',
-    //                     'margin: 0;',
-    //                     'background: #EFEFEF;',
-    //                 '}',
-    //                 'svg {',
-    //                     'max-width: 100vw;',
-    //                     'max-height: 100vh;',
-    //                 '}',
-    //             '</style>',
-    //         '</head>',
-    //         '<body>',
-    //             _generateSVG(tokenId, check),
-    //         '</body>',
-    //         '</html>'
-    //     );
-    // }
+        return string(ChecksArt.generateSVG(checks.all[tokenId], COLORS));
+    }
 }

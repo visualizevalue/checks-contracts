@@ -1,3 +1,4 @@
+import fs from 'fs'
 import { loadFixture } from 'ethereum-waffle'
 import { BigNumber, Contract, Signer} from 'ethers'
 import { parseEther } from 'ethers/lib/utils'
@@ -12,7 +13,10 @@ const WHALE = '0x5efdB6D8c798c2c2Bea5b1961982a5944F92a5C1'
 
 describe('Checks', () => {
   async function deployChecksFixture() {
-    let Utils,
+    let
+        ChecksArt,
+        checksArt,
+        Utils,
         utils,
         ChecksOriginals,
         checks: Contract,
@@ -25,15 +29,24 @@ describe('Checks', () => {
     utils = await Utils.deploy()
     await utils.deployed()
 
+    ChecksArt = await ethers.getContractFactory('ChecksArt', {
+      libraries: {
+        Utils: utils.address,
+      }
+    })
+    checksArt = await ChecksArt.deploy()
+    await checksArt.deployed()
+
     ChecksOriginals = await ethers.getContractFactory('Checks', {
       libraries: {
         Utils: utils.address,
+        ChecksArt: checksArt.address,
       }
     })
     checks = await ChecksOriginals.deploy()
     await checks.deployed()
 
-    checksEditions = await ethers.getContractAt('ERC721Burnable', EDITIONS)
+    checksEditions = await ethers.getContractAt('ZoraEdition', EDITIONS)
 
     await hre.network.provider.request({
       method: 'hardhat_impersonateAccount',
@@ -116,8 +129,8 @@ describe('Checks', () => {
         composite: token.composite,
         seed: token.seed,
       })
-      const [possibleColors, indexes] = await checks.colorIndexes(1001)
-      console.log(1001, possibleColors, indexes.map(n => n.toNumber()))
+      const indexes = await checks.colorIndexes(1001)
+      console.log(1001, indexes.map(n => n.toNumber()))
     })
   })
 
@@ -125,59 +138,43 @@ describe('Checks', () => {
     it.only('Should allow to composite originals', async () => {
       const { checks, jalil } = await loadFixture(mintedFixture)
 
+      expect(await checks.ownerOf(808)).to.equal(JALIL)
+      console.log(await checks.ownerOf(808))
+      console.log(await checks.ownerOf(808))
+
       const tokens = [808, 1444, 1750, 1909, 1967, 2244, 2567, 3325]
 
       for (const [index, id] of tokens.entries()) {
-        // const token = await checks.getCheck(id)
-        // console.log({
-        //   checks: token.checks,
-        //   level: token.level,
-        //   composite: token.composite,
-        //   seed: token.seed,
-        // })
-        const [possibleColors, indexes] = await checks.colorIndexes(id)
-        console.log(id, possibleColors, indexes.map(n => n.toNumber()))
-        // const colors = await checks.colors(808)
-        // console.log(colors)
+        const indexes = await checks.colorIndexes(id)
+        console.log(id, indexes.map(n => n.toNumber()))
 
         if (index % 2 == 0) {
           await checks.connect(jalil).composite(tokens[index], tokens[index + 1])
 
-          const [possibleColors, indexes] = await checks.colorIndexes(id)
-          console.log(id, possibleColors, indexes.map(n => n.toNumber()))
+          const indexes = await checks.colorIndexes(id)
+          console.log(id, indexes.map(n => n.toNumber()))
         }
       }
 
       await checks.connect(jalil).composite(808, 1750)
       await checks.connect(jalil).composite(1967, 2567)
 
-      let [pc, i] = await checks.colorIndexes(808)
-      console.log(808, pc, i.map(n => n.toNumber()));
+      let i = await checks.colorIndexes(808)
+      console.log(808, i.map(n => n.toNumber()));
 
-      [pc, i] = await checks.colorIndexes(1967)
-      console.log(1967, pc, i.map(n => n.toNumber()))
+      i = await checks.colorIndexes(1967)
+      console.log(1967, i.map(n => n.toNumber()))
 
       await checks.connect(jalil).composite(808, 1967);
-      [pc, i] = await checks.colorIndexes(808)
-      console.log(808, pc, i.map(n => n.toNumber()))
+      i = await checks.colorIndexes(808)
+      console.log(808, i.map(n => n.toNumber()))
+      // console.log(await checks.colors(808))
 
-
-      // await expect(checks.connect(jalil).composite(808, 1444))
-      //   .to.emit(checks, 'Composite')
-      //   .withArgs(808, 1444, 40)
-
-      // const token808_40 = await checks.getCheck(808)
-      // console.log({
-      //   checks: token808_40.checks,
-      //   level: token808_40.level,
-      //   composite: token808_40.composite,
-      //   seed: token808_40.seed,
-      // })
-      // const [possibleColors808_40, indexes808_40] = await checks.colorIndexes(808)
-      // console.log(808, possibleColors808_40, indexes808_40.map(n => n.toNumber()))
-
-      // const colors808 = await checks.colors(808)
-      // console.log(colors808)
+      // console.log(await checks.ownerOf(808))
+      // console.log(await checks.getCheck(808))
+      // const svg = await checks.svg(888)
+      // console.log(svg)
+      // fs.writeFileSync('808_20.svg', svg)
     })
   })
 })
