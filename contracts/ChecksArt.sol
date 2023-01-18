@@ -161,6 +161,22 @@ library ChecksArt {
         return string(values);
     }
 
+    function fillAnimation() public pure returns (
+        string memory animation
+    ) {
+        string[81] memory colors_ = COLORS();
+
+        bytes memory values;
+        for (uint i = 0; i < 80; i++) {
+            values = abi.encodePacked(values, colors_[i], ';');
+        }
+
+        // Add initial color as last one for smooth animations
+        values = abi.encodePacked(values, colors_[0]);
+
+        return string(values);
+    }
+
     function generateChecks(CheckRenderData memory data) public view returns (string memory) {
         bytes memory checksBytes;
         for (uint8 i = 0; i < data.checksCount; i++) {
@@ -198,11 +214,12 @@ library ChecksArt {
                 '<g transform="translate(', translateX, ', ', translateY, ')">',
                     // '<path transform="scale(',data.scale,')" fill="',fill,'" d="',CHECKS_PATH,'">',
                     '<use href="#check" transform="scale(',data.scale,')" fill="',data.colors[i],'">',
-                        '<animate ',
-                            'attributeName="fill" values="',fillAnimation(data, i),'" ',
-                            'dur="30s" begin="animation.begin" ',
-                            'repeatCount="indefinite" ',
-                        '/>',
+                        '<use href="#colors" begin="animation.begin -', data.colorIndexes[0] * 3,'s" />',
+                            // 'attributeName="fill" values="',fillAnimation(data, i),'" ',
+                            // 'dur="30s" begin="animation.begin" ',
+                        //     'begin="animation.begin" ',
+                        //     'repeatCount="indefinite" ',
+                        // '/>',
                     '</use>'
                     // '</path>',
                 '</g>'
@@ -257,6 +274,11 @@ library ChecksArt {
             '>',
                 '<defs>',
                     '<path id="check" d="',CHECKS_PATH,'"></path>',
+                    '<animate id="colors" ',
+                        'attributeName="fill" values="',fillAnimation(),'" ',
+                        'dur="240s" begin="animation.begin" ',
+                        'repeatCount="indefinite" ',
+                    '/>',
                 '</defs>',
                 '<rect width="680" height="680" fill="#EFEFEF" />',
                 '<rect x="188" y="152" width="304" height="376" fill="white"/>',
