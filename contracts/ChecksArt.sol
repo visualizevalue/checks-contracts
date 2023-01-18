@@ -147,18 +147,21 @@ library ChecksArt {
     }
 
     function fillAnimation(CheckRenderData memory data, uint8 offset) public pure returns (
-        string memory animation
+        uint8 duration, string memory animation
     ) {
         bytes memory values;
-        // for (uint i = 0; i < data.checksCount; i++) {
-        for (uint i = offset; i < offset + 10; i++) {
+
+        uint8 count = data.checksCount > 20
+            ? data.checksCount / 2
+            : data.checksCount * 2;
+        for (uint i = offset; i < offset + count; i++) {
             values = abi.encodePacked(values, data.colors[i % 80], ';');
         }
 
         // Add initial color as last one for smooth animations
         values = abi.encodePacked(values, data.colors[offset]);
 
-        return string(values);
+        return (count * 3, string(values));
     }
 
     function fillAnimation() public pure returns (
@@ -199,6 +202,7 @@ library ChecksArt {
             }
             string memory translateX = Utils.uint2str(data.rowX + data.indexInRow * data.spaceX);
             string memory translateY = Utils.uint2str(data.rowY);
+            (uint8 duration, string memory animation) = fillAnimation(data, i);
 
             // Color & Animation
             console.log('HEEERREEEE!!!');
@@ -212,25 +216,13 @@ library ChecksArt {
 
             checksBytes = abi.encodePacked(checksBytes, abi.encodePacked(
                 '<g transform="translate(', translateX, ', ', translateY, ')">',
-                    // '<path transform="scale(',data.scale,')" fill="',fill,'" d="',CHECKS_PATH,'">',
                     '<use href="#check" transform="scale(',data.scale,')" fill="',data.colors[i],'">',
-                        // '<use ',
-                        //     'href="#colors" ',
-                        //     // 'begin="animation.begin-', Utils.uint2str(data.colorIndexes[i] * 3),'s" ',
-                        //     'repeatCount="indefinite" ',
-                        // '/>',
-                        //     'attributeName="fill" ',//'values="',fillAnimation(data, i),'" ',
-                        //     'dur="30s" begin="animation.begin" ',
-                        //     'begin="animation.begin" ',
-                        //     'repeatCount="indefinite" ',
-                        // '/>',
-                        // '<animate id="check-animation" ',
-                        //     // 'attributeName="fill" values="',fillAnimation(),'" dur="240s" ',
-                        //     'begin="animation.begin-', Utils.uint2str(data.colorIndexes[i] * 3),'s" ',
-                        //     // 'repeatCount="indefinite" ',
-                        // '/>',
+                        '<animate ',
+                            'attributeName="fill" values="',animation,'" ',
+                            'dur="',duration,'s" begin="animation.begin" ',
+                            'repeatCount="indefinite" ',
+                        '/>',
                     '</use>'
-                    // '</path>',
                 '</g>'
             ));
         }
@@ -283,12 +275,6 @@ library ChecksArt {
             '>',
                 '<defs>',
                     '<path id="check" d="',CHECKS_PATH,'"></path>',
-                    // '<animate href="#check-animation" id="colors" ',
-                    '<animate id="colors" ',
-                        'attributeName="fill" values="',fillAnimation(),'" ',
-                        'dur="240s" begin="animation.begin" ',
-                        'repeatCount="indefinite" ',
-                    '/>',
                 '</defs>',
                 '<rect width="680" height="680" fill="#EFEFEF" />',
                 '<rect x="188" y="152" width="304" height="376" fill="white"/>',
