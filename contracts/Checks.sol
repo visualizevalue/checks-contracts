@@ -8,15 +8,12 @@ import './IChecks.sol';
 import './ChecksArt.sol';
 import "./Utilities.sol";
 
-import "hardhat/console.sol";
+// import "hardhat/console.sol";
 
 contract Checks is IChecks, ERC721 {
     IChecksEdition public editionChecks;
 
-    // TODO: 0 = infinity, maybe call `zero` `infinity`
-    uint8[8] public DIVISORS = [ 80, 40, 20, 10, 5, 4, 1, 0 ];
-
-    Data checks;
+    Checks checks;
 
     constructor() ERC721("Checks", "Check") {
         // Link Checks to the Edition Contract
@@ -49,9 +46,6 @@ contract Checks is IChecks, ERC721 {
     function getCheck(uint256 tokenId) external view returns (Check memory) {
         _requireMinted(tokenId);
 
-        console.log('getCheck ownerOf(tokenId)');
-        console.log(ownerOf(tokenId));
-
         return checks.all[tokenId];
     }
 
@@ -70,12 +64,9 @@ contract Checks is IChecks, ERC721 {
         // Composite our check
         toKeep.composite[toKeep.divisorIndex] = uint16(burnId);
         toKeep.divisorIndex += 1;
-        toKeep.checks = DIVISORS[toKeep.divisorIndex];
+        toKeep.checks = ChecksArt.DIVISORS()[toKeep.divisorIndex];
 
         // Perform the burn
-        console.log('burning');
-        console.log(burnId);
-        console.log(ownerOf(burnId));
         _burn(burnId);
 
         // Notify composite
@@ -91,7 +82,7 @@ contract Checks is IChecks, ERC721 {
         }
     }
 
-    function zero(uint256[] calldata tokenIds) public {
+    function infinity(uint256[] calldata tokenIds) public {
         uint256 count = tokenIds.length;
         require(count == 64, "Final composite requires 64 single Checks");
         for (uint i = 0; i < count; i++) {
@@ -110,24 +101,24 @@ contract Checks is IChecks, ERC721 {
         }
 
         // Notify final composite.
-        emit Zero(id, tokenIds[1:]);
+        emit Infinity(id, tokenIds[1:]);
     }
 
     function colors(uint256 tokenId) external view returns (string[] memory, uint256[] memory)
     {
         Check memory check = checks.all[tokenId];
-        return ChecksArt.colors(check, DIVISORS, checks);
+        return ChecksArt.colors(check, checks);
     }
 
     function svg(uint256 tokenId) external view returns (string memory) {
         _requireMinted(tokenId);
 
-        return string(ChecksArt.generateSVG(checks.all[tokenId], DIVISORS, checks));
+        return string(ChecksArt.generateSVG(checks.all[tokenId], checks));
     }
 
-    // function tokenURI(uint256 tokenId) public view override returns (string memory) {
-    //     _requireMinted(tokenId);
+    function tokenURI(uint256 tokenId) public view override returns (string memory) {
+        _requireMinted(tokenId);
 
-    //     return ChecksArt.tokenURI(tokenId, checks.all[tokenId], COLORS);
-    // }
+        return ChecksArt.tokenURI(tokenId, checks.all[tokenId], checks);
+    }
 }

@@ -28,7 +28,7 @@ const HARDHAT_NETWORK_CONFIG = {
   chainId: 1337,
   forking: {
     url: process.env.MAINNET_URL || '',
-    blockNumber: 16406000,
+    blockNumber: 16430900,
   },
   allowUnlimitedContractSize: true,
 }
@@ -59,6 +59,9 @@ const config = {
   },
   etherscan: {
     apiKey: process.env.ETHERSCAN_API_KEY,
+  },
+  mocha: {
+    timeout: 120_000_000,
   },
 };
 

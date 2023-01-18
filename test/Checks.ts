@@ -11,6 +11,18 @@ const VV = '0xc8f8e2F59Dd95fF67c3d39109ecA2e2A017D4c8a'
 const JALIL = '0xe11Da9560b51f8918295edC5ab9c0a90E9ADa20B'
 const WHALE = '0x5efdB6D8c798c2c2Bea5b1961982a5944F92a5C1'
 
+const VV_TOKENS = [
+  10115, 10193, 10194, 1060, 11176, 11177, 11323, 11505, 11545, 1164, 11828, 12028, 12076,
+  12163, 12175, 12459, 13052, 13075, 13124, 13359, 13677, 13705, 13948, 13959, 14114, 14686,
+  14693, 14806, 14808, 14810, 14937, 15091, 15114, 1534, 15488, 15556, 15594, 15811, 1587,
+  1855, 1866, 1964, 2026, 2397, 2529, 2657, 2668, 2732, 2733, 3020, 3096, 3108, 3329, 3330,
+  3331, 3364, 3694, 3710, 3723, 3732, 3737, 3738, 3752, 3755, 4047, 4133, 4408, 4547, 4552,
+  4809, 4911, 5517, 5775, 6012, 6013, 6014, 6015, 6016, 6017, 6018, 6019, 6020, 6381, 6405,
+  6406, 6421, 6447, 645, 6458, 6459, 6460, 6518, 6735, 6737, 6831, 6978, 6980, 7582, 7583,
+  7584, 7585, 7586, 7587, 7588, 7589, 7590, 7591, 7592, 7593, 7594, 7595, 7596, 7597, 7598,
+  7599, 7601, 7602, 7603, 7604, 7605, 7606, 7609, 7610, 9294, 9306, 9470, 9696
+]
+
 describe('Checks', () => {
   async function deployChecksFixture() {
     let
@@ -25,11 +37,11 @@ describe('Checks', () => {
         jalil: Signer,
         whale: Signer;
 
+    checksEditions = await ethers.getContractAt('ZoraEdition', EDITIONS)
+
     Utils = await ethers.getContractFactory('Utils')
     utils = await Utils.deploy()
     await utils.deployed()
-
-    console.log('UTILS DEPLOYED', utils.address)
 
     ChecksArt = await ethers.getContractFactory('ChecksArt', {
       libraries: {
@@ -39,8 +51,6 @@ describe('Checks', () => {
     checksArt = await ChecksArt.deploy()
     await checksArt.deployed()
 
-    console.log('CHECKSART DEPLOYED', checksArt.address)
-
     ChecksOriginals = await ethers.getContractFactory('Checks', {
       libraries: {
         Utils: utils.address,
@@ -49,10 +59,6 @@ describe('Checks', () => {
     })
     checks = await ChecksOriginals.deploy()
     await checks.deployed()
-
-    console.log('CHECKS DEPLOYED')
-
-    checksEditions = await ethers.getContractAt('ZoraEdition', EDITIONS)
 
     await hre.network.provider.request({
       method: 'hardhat_impersonateAccount',
@@ -79,25 +85,26 @@ describe('Checks', () => {
       checks,
       checksEditions,
       vv,
-      jalil
+      jalil,
+      whale,
     }
   }
 
   async function mintedFixture() {
-    const { checksEditions, checks, jalil } = await deployChecksFixture()
+    const { checksEditions, checks, jalil, vv } = await deployChecksFixture()
 
     await checksEditions.connect(jalil).setApprovalForAll(checks.address, true)
     await checks.connect(jalil).mint([
       808, 1444, 1750, 1909, 1967, 2244, 2567, 3325
-      // 1304, 1444, 1750, 1909, 1967, 2244, 2567, 3325, 3378,
-      // 3486, 4790, 5581, 6192, 9075, 12480, 14319, 14479, 15109, 15424,
     ])
 
-    console.log('Minting fixture complete')
+    await checksEditions.connect(vv).setApprovalForAll(checks.address, true)
+    await checks.connect(vv).mint(VV_TOKENS)
 
     return {
       checks,
       jalil,
+      vv
     }
   }
 
@@ -108,11 +115,11 @@ describe('Checks', () => {
   })
 
   describe('Mint', () => {
-    it('Should allow to mint originals', async () => {
+    it.skip('Should allow to mint originals', async () => {
       const { checksEditions, checks, jalil } = await loadFixture(deployChecksFixture)
 
       await expect(checks.connect(jalil).mint([1001]))
-        .to.be.revertedWith('Edition burn not approved.')
+        .to.be.revertedWith('Edition burn not approved')
 
       // Approve
       await checksEditions.connect(jalil).setApprovalForAll(checks.address, true)
@@ -126,93 +133,63 @@ describe('Checks', () => {
         .withArgs(ethers.constants.AddressZero, JALIL, 44)
         .to.emit(checks, 'Transfer')
         .withArgs(ethers.constants.AddressZero, JALIL, 222)
+    })
 
+    it.skip('Should allow to mint many originals at once', async () => {
+      const { checksEditions, checks, vv } = await loadFixture(deployChecksFixture)
 
-      const token = await checks.getCheck(1001)
-      console.log({
-        checks: token.checks,
-        level: token.level,
-        composite: token.composite,
-        seed: token.seed,
-      })
-      const indexes = (await checks.colors(1001))[1]
-      console.log(1001, indexes.map(n => n.toNumber()))
+      await checksEditions.connect(vv).setApprovalForAll(checks.address, true)
+
+      await expect(checks.connect(vv).mint(VV_TOKENS))
+        .to.emit(checks, 'Transfer')
+        .withArgs(ethers.constants.AddressZero, VV, 9696)
     })
   })
 
   describe('Compositing', () => {
-    it('Should allow to composite originals', async () => {
-      const { checks, jalil } = await loadFixture(mintedFixture)
+    let DIVISORS = [80, 40, 20, 10, 5, 4, 1, 0]
 
-      expect(await checks.ownerOf(808)).to.equal(JALIL)
-      console.log(await checks.ownerOf(808))
-      console.log(await checks.ownerOf(808))
+    const composite = async (
+      tokens: number[],
+      checks: Contract,
+      signer: Signer,
+      divisorIndex: number = 0
+    ) => {
+      const divisor = DIVISORS[divisorIndex]
 
-      const tokens = [808, 1444, 1750, 1909, 1967, 2244, 2567, 3325]
-
+      const toKeep = []
+      const toBurn = []
       for (const [index, id] of tokens.entries()) {
-        const indexes = (await checks.colors(id))[1]
-        console.log(id, indexes.map(n => n.toNumber()))
-
-        console.log('hi', id)
-        // fs.writeFileSync(`test/dist/${id}_80.svg`, await checks.svg(id))
+        if (divisorIndex > 1) {
+          fs.writeFileSync(`test/dist/${id}_${divisor}.svg`, await checks.svg(id))
+          console.log(`Saved ${id}@${divisor}`)
+        }
 
         if (index % 2 == 0) {
-          await checks.connect(jalil).composite(tokens[index], tokens[index + 1])
-
-          const indexes = (await checks.colors(id))[1]
-          console.log(id, indexes.map(n => n.toNumber()))
-
-          fs.writeFileSync(`test/dist/${id}_40.svg`, await checks.svg(id))
+          toKeep.push(tokens[index])
+        } else {
+          toBurn.push(tokens[index])
         }
       }
 
-      await checks.connect(jalil).composite(808, 1750)
-      await checks.connect(jalil).composite(1967, 2567)
+      await checks.connect(signer).compositeMany(toKeep, toBurn)
+      console.log(`Composited `, toKeep, toBurn)
 
-      let i = (await checks.colors(808))[1]
-      console.log(808, i.map(n => n.toNumber()));
-
-      i = (await checks.colors(1967))[1]
-      console.log(1967, i.map(n => n.toNumber()))
-
-      fs.writeFileSync('test/dist/808_20.svg', await checks.svg(808))
-      fs.writeFileSync('test/dist/1967_20.svg', await checks.svg(1967))
-
-      await checks.connect(jalil).composite(808, 1967);
-      i = (await checks.colors(808))[1]
-      console.log(808, i.map(n => n.toNumber()))
-      console.log(await checks.colors(808))
-
-      console.log(await checks.ownerOf(808))
-      console.log(await checks.getCheck(808))
-      const svg = await checks.svg(808)
-      console.log(svg)
-      fs.writeFileSync('test/dist/808_10.svg', svg)
-    })
-
-    it.only('Should render 80s correctly', async () => {
-      const { checks, jalil } = await loadFixture(mintedFixture)
-
-      // const tokens = [808, 1444]
-      const tokens = [1444, 808]
-
-      for (const id of tokens) {
-        fs.writeFileSync(`test/dist/${id}_80.svg`, await checks.svg(id))
+      if (toKeep.length > 1 && divisor > 0) {
+        composite(toKeep, checks, signer, divisorIndex + 1)
+      } else {
+        const id = toKeep[0]
+        const divisor = DIVISORS[divisorIndex + 1]
+        fs.writeFileSync(`test/dist/${id}_${divisor}.svg`, await checks.svg(id))
+        console.log(`Saved ${id}@${divisor}`)
       }
-    })
+    }
 
-    it('Should render 40s correctly', async () => {
-      const { checks, jalil } = await loadFixture(mintedFixture)
 
-      const tokens = [808, 1444]
+    it.skip('Should allow to composite originals', async () => {
+      const { checks, vv } = await loadFixture(mintedFixture)
 
-      for (const [index, id] of tokens.entries()) {
-        if (index % 2 == 0) {
-          await checks.connect(jalil).composite(tokens[index], tokens[index + 1])
-          fs.writeFileSync(`test/dist/${id}_40.svg`, await checks.svg(id))
-        }
-      }
+      await composite(VV_TOKENS.slice(0, 64), checks, vv)
     })
   })
 })

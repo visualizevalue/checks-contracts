@@ -10,7 +10,7 @@ interface IChecks {
         uint32 seed; // Seed for the color randomisation
     }
 
-    struct Data {
+    struct Checks {
         mapping(uint256 => Check) all;
     }
 
@@ -20,7 +20,7 @@ interface IChecks {
         uint8 indexed checks
     );
 
-    event Zero(
+    event Infinity(
         uint256 indexed tokenId,
         uint256[] indexed burnedIds
     );

@@ -5,17 +5,16 @@ import "@openzeppelin/contracts/utils/Base64.sol";
 import "./Utilities.sol";
 import "./IChecks.sol";
 
-import "hardhat/console.sol";
-
 struct CheckRenderData {
-    string[] colors;
     uint256[] colorIndexes;
+    string[] colors;
+    string gridColor;
     string duration;
     string scale;
     uint32 seed;
     uint16 rowX;
     uint16 rowY;
-    uint8 checksCount;
+    uint8 count;
     uint8 spaceX;
     uint8 spaceY;
     uint8 perRow;
@@ -27,6 +26,10 @@ struct CheckRenderData {
 
 library ChecksArt {
     string public constant CHECKS_PATH = 'M20 10.476c0-1.505-.833-2.81-2.046-3.428.147-.415.227-.862.227-1.334 0-2.104-1.629-3.807-3.636-3.807-.448 0-.876.08-1.272.238C12.684.87 11.438 0 10 0 8.562 0 7.319.873 6.727 2.143a3.434 3.434 0 0 0-1.272-.238c-2.01 0-3.636 1.705-3.636 3.81 0 .47.079.917.226 1.333C.833 7.667 0 8.97 0 10.476c0 1.424.745 2.665 1.85 3.32-.02.162-.031.324-.031.49 0 2.104 1.627 3.81 3.636 3.81.448 0 .876-.083 1.271-.239C7.316 19.127 8.561 20 10 20c1.44 0 2.683-.872 3.273-2.143.395.155.824.236 1.272.236 2.01 0 3.636-1.704 3.636-3.81 0-.165-.011-.327-.031-.488C19.252 13.141 20 11.9 20 10.477Zm-6.3-3.175-4.128 6.19a.713.713 0 0 1-.991.199l-.11-.09-2.3-2.3a.713.713 0 1 1 1.01-1.01l1.685 1.683 3.643-5.466a.715.715 0 0 1 1.19.793v.001Z';
+
+    function DIVISORS() public pure returns (uint8[8] memory) {
+        return [ 80, 40, 20, 10, 5, 4, 1, 0 ];
+    }
 
     function COLORS() public pure returns (string[81] memory) {
         return [
@@ -45,11 +48,12 @@ library ChecksArt {
     }
 
     /// @dev Generate indexes for the color slots of its parent (root being the COLORS themselves).
-    function colorIndexes(uint8 divisorIndex, IChecks.Check memory check, uint8[8] memory DIVISORS, IChecks.Data storage checks)
+    function colorIndexes(uint8 divisorIndex, IChecks.Check memory check, IChecks.Checks storage checks)
         public view returns (uint256[] memory)
     {
-        uint256 checksCount = DIVISORS[divisorIndex];
-        uint256 possibleColorChoices = divisorIndex > 0 ? DIVISORS[divisorIndex - 1] * 2 : 80;
+        uint8[8] memory divisors = DIVISORS();
+        uint256 checksCount = divisors[divisorIndex];
+        uint256 possibleColorChoices = divisorIndex > 0 ? divisors[divisorIndex - 1] * 2 : 80;
 
         uint256[] memory indexes = new uint256[](checksCount);
         for (uint i = 0; i < checksCount; i++) {
@@ -59,14 +63,14 @@ library ChecksArt {
         if (divisorIndex > 0) {
             uint8 previousDivisor = divisorIndex - 1;
 
-            uint256[] memory parentIndexes = colorIndexes(previousDivisor, check, DIVISORS, checks);
+            uint256[] memory parentIndexes = colorIndexes(previousDivisor, check, checks);
 
             IChecks.Check memory composited = checks.all[check.composite[previousDivisor]];
-            uint256[] memory compositedIndexes = colorIndexes(previousDivisor, composited, DIVISORS, checks);
+            uint256[] memory compositedIndexes = colorIndexes(previousDivisor, composited, checks);
 
             // Replace random indices with parent / root color indices
-            uint8 count = DIVISORS[previousDivisor];
-            for (uint i = 0; i < DIVISORS[divisorIndex]; i++) {
+            uint8 count = divisors[previousDivisor];
+            for (uint i = 0; i < divisors[divisorIndex]; i++) {
                 uint256 branchIndex = indexes[i] % count;
                 indexes[i] = indexes[i] < count
                     ? parentIndexes[branchIndex]
@@ -78,7 +82,7 @@ library ChecksArt {
     }
 
     function colors(
-        IChecks.Check memory check, uint8[8] memory DIVISORS, IChecks.Data storage checks
+        IChecks.Check memory check, IChecks.Checks storage checks
     ) public view returns (string[] memory, uint256[] memory) {
         // A fully composited check has no color.
         if (check.checks == 0) {
@@ -88,7 +92,7 @@ library ChecksArt {
         }
 
         // Fetch the indices on the original color mapping.
-        uint256[] memory indexes = colorIndexes(check.divisorIndex, check, DIVISORS, checks);
+        uint256[] memory indexes = colorIndexes(check.divisorIndex, check, checks);
 
         // Map over to get the colors.
         string[] memory checkColors = new string[](check.checks);
@@ -99,30 +103,6 @@ library ChecksArt {
 
         return (checkColors, indexes);
     }
-
-    // function tokenURI(uint256 tokenId, IChecks.Check memory check, string[81] memory COLORS) public pure returns (string memory) {
-    //     bytes memory metadata = abi.encodePacked(
-    //         '{',
-    //             '"name": "Checks ', tokenId, '",',
-    //             '"description": "This artwork may or may not be notable",',
-    //             '"image": ',
-    //                 '"data:image/svg+xml;base64,',
-    //                 Base64.encode(generateSVG(check, COLORS)),
-    //                 '"',
-    //             '"animation_url": ',
-    //                 '"data:text/html;base64,',
-    //                 Base64.encode(generateHTML(check, COLORS)),
-    //                 '"',
-    //         '}'
-    //     );
-
-    //     return string(
-    //         abi.encodePacked(
-    //             "data:application/json;base64,",
-    //             Base64.encode(metadata)
-    //         )
-    //     );
-    // }
 
     function perRow(uint8 checks) public pure returns (uint8) {
         return checks == 80
@@ -147,42 +127,32 @@ library ChecksArt {
     }
 
     function fillAnimation(CheckRenderData memory data, uint8 offset) public pure returns (
-        uint8 duration, string memory animation
+        string memory duration, string memory animation
     ) {
-        bytes memory values;
+        // To prevent the SVG from getting too large we have to limit the number of
+        // colors we use when we have many checks.
+        uint8 count = data.count < 20
+            ? 80
+            : data.count < 80
+                ? 40
+                : 20;
 
-        uint8 count = data.checksCount > 20
-            ? data.checksCount / 2
-            : data.checksCount * 2;
+        string[81] memory allColors = COLORS();
+
+        bytes memory values;
         for (uint i = offset; i < offset + count; i++) {
-            values = abi.encodePacked(values, data.colors[i % 80], ';');
+            values = abi.encodePacked(values, allColors[data.colorIndexes[i % data.count] % 80], ';');
         }
 
         // Add initial color as last one for smooth animations
         values = abi.encodePacked(values, data.colors[offset]);
 
-        return (count * 3, string(values));
+        return (Utils.uint2str(count * 2), string(values));
     }
 
-    function fillAnimation() public pure returns (
-        string memory animation
-    ) {
-        string[81] memory colors_ = COLORS();
-
-        bytes memory values;
-        for (uint i = 0; i < 80; i++) {
-            values = abi.encodePacked(values, colors_[i], ';');
-        }
-
-        // Add initial color as last one for smooth animations
-        values = abi.encodePacked(values, colors_[0]);
-
-        return string(values);
-    }
-
-    function generateChecks(CheckRenderData memory data) public view returns (string memory) {
+    function generateChecks(CheckRenderData memory data) public pure returns (string memory) {
         bytes memory checksBytes;
-        for (uint8 i = 0; i < data.checksCount; i++) {
+        for (uint8 i = 0; i < data.count; i++) {
             // Row Positioning
             data.indexInRow = i % data.perRow;
             data.isNewRow = data.indexInRow == 0 && i > 0;
@@ -202,17 +172,10 @@ library ChecksArt {
             }
             string memory translateX = Utils.uint2str(data.rowX + data.indexInRow * data.spaceX);
             string memory translateY = Utils.uint2str(data.rowY);
-            (uint8 duration, string memory animation) = fillAnimation(data, i);
 
-            // Color & Animation
-            console.log('HEEERREEEE!!!');
-            console.log(data.seed);
-            console.log(data.checksCount);
-            console.log(i);
-            console.log(data.seed + data.checksCount + i);
-            // (string memory fill, string memory animation) = fillAnimation(data.seed + data.checksCount + i);
-            // (string memory fill,) = fillAnimation(data.seed + data.checksCount + i, COLORS);
-            console.log('PASSEDHEEERREEEE!!!');
+            // Animation
+            // TODO: Check if we can/should limit the color space during the animations (e.g. based on parent)?
+            (string memory duration, string memory animation) = fillAnimation(data, i);
 
             checksBytes = abi.encodePacked(checksBytes, abi.encodePacked(
                 '<g transform="translate(', translateX, ', ', translateY, ')">',
@@ -230,42 +193,44 @@ library ChecksArt {
         return string(checksBytes);
     }
 
-    function generateSVG(
-        IChecks.Check memory check, uint8[8] memory DIVISORS, IChecks.Data storage checks
-    ) public view returns (bytes memory) {
+    function generateGrid() public pure returns (bytes memory) {
+        bytes memory hl;
+        for (uint i = 0; i < 11; i++) {
+            hl = abi.encodePacked(hl, '<use href="#hl" y="', Utils.uint2str(160 + i*36),'.5"/>');
+        }
+        bytes memory vl;
+        for (uint i = 0; i < 9; i++) {
+            vl = abi.encodePacked(vl, '<use href="#vl" x="', Utils.uint2str(195 + i*36),'.5"/>');
+        }
+
+        return abi.encodePacked('<g id="grid">', hl, vl,'</g>');
+    }
+
+    function collectRenderData(IChecks.Check memory check, IChecks.Checks storage checks) public view returns (CheckRenderData memory data) {
+        // Base config
+        data.count = check.checks;
+        data.seed = check.seed;
+
         // Colors
-        (string[] memory colors_, uint256[] memory colorIndexes_) = colors(check, DIVISORS, checks);
+        (string[] memory colors_, uint256[] memory colorIndexes_) = colors(check, checks);
+        data.colorIndexes = colorIndexes_;
+        data.colors = colors_;
+        data.gridColor = data.count > 0 ? '#F2F2F2' : '#0D0D0D';
 
         // Positioning
-        CheckRenderData memory data;
-        data.colors = colors_;
-        data.colorIndexes = colorIndexes_;
-        data.checksCount = check.checks;
-        data.seed = check.seed;
-        data.scale = data.checksCount > 20 ? '1' : '2.8';
-        data.spaceX = data.checksCount == 80 ? 36 : 72;
-        data.spaceY = data.checksCount > 20 ? 36 : 72;
-        data.perRow = perRow(data.checksCount);
-        data.rowX = rowX(data.checksCount);
-        data.rowY = rowY(data.checksCount);
-        data.indent = data.checksCount == 40;
+        data.scale = data.count > 20 ? '1' : '2.8';
+        data.spaceX = data.count == 80 ? 36 : 72;
+        data.spaceY = data.count > 20 ? 36 : 72;
+        data.perRow = perRow(data.count);
+        data.indent = data.count == 40;
+        data.rowX = rowX(data.count);
+        data.rowY = rowY(data.count);
+    }
 
-        // Animation
-        // TODO: Check if we can/should limit the color space?
-        // data.duration = Utils.uint2str(data.checksCount*3);
-
-        console.log('hi');
-        console.log(data.checksCount);
-        console.log(data.seed);
-        console.log(data.scale);
-        console.log(data.spaceX);
-        console.log(data.spaceY);
-        console.log(data.perRow);
-        console.log(data.rowX);
-        console.log(data.rowY);
-        console.log(data.indent);
-        console.log('hi');
-
+    function generateSVG(
+        IChecks.Check memory check, IChecks.Checks storage checks
+    ) public view returns (bytes memory) {
+        CheckRenderData memory data = collectRenderData(check, checks);
 
         return abi.encodePacked(
             '<svg ',
@@ -275,9 +240,12 @@ library ChecksArt {
             '>',
                 '<defs>',
                     '<path id="check" d="',CHECKS_PATH,'"></path>',
+                    '<line id="hl" x1="196" x2="484" stroke="',data.gridColor,'"/>',
+                    '<line id="vl" y1="160" y2="520" stroke="',data.gridColor,'"/>',
                 '</defs>',
-                '<rect width="680" height="680" fill="#EFEFEF" />',
+                '<rect width="680" height="680" fill="#EFEFEF"/>',
                 '<rect x="188" y="152" width="304" height="376" fill="white"/>',
+                generateGrid(),
                 generateChecks(data),
                 '<rect width="680" height="680" fill="transparent">',
                     '<animate ',
@@ -294,31 +262,56 @@ library ChecksArt {
         );
     }
 
-    // function generateHTML(IChecks.Check memory check, string[81] memory COLORS) public pure returns (bytes memory) {
-    //     return abi.encodePacked(
-    //         '<!DOCTYPE html>',
-    //         '<html lang="en">',
-    //         '<head>',
-    //             '<meta charset="UTF-8">',
-    //             '<meta http-equiv="X-UA-Compatible" content="IE=edge">',
-    //             '<meta name="viewport" content="width=device-width, initial-scale=1.0">',
-    //             '<title>Check #1234</title>',
-    //             '<style>',
-    //                 'html,',
-    //                 'body {',
-    //                     'margin: 0;',
-    //                     'background: #EFEFEF;',
-    //                 '}',
-    //                 'svg {',
-    //                     'max-width: 100vw;',
-    //                     'max-height: 100vh;',
-    //                 '}',
-    //             '</style>',
-    //         '</head>',
-    //         '<body>',
-    //             generateSVG(check, COLORS),
-    //         '</body>',
-    //         '</html>'
-    //     );
-    // }
+    function tokenURI(uint256 tokenId, IChecks.Check memory check, IChecks.Checks storage checks) public view returns (string memory) {
+        bytes memory svg = generateSVG(check, checks);
+        bytes memory metadata = abi.encodePacked(
+            '{',
+                '"name": "Checks ', tokenId, '",',
+                '"description": "This artwork may or may not be notable",',
+                '"image": ',
+                    '"data:image/svg+xml;base64,',
+                    Base64.encode(svg),
+                    '"',
+                '"animation_url": ',
+                    '"data:text/html;base64,',
+                    Base64.encode(generateHTML(svg)),
+                    '"',
+            '}'
+        );
+
+        return string(
+            abi.encodePacked(
+                "data:application/json;base64,",
+                Base64.encode(metadata)
+            )
+        );
+    }
+
+    function generateHTML(bytes memory svg) public pure returns (bytes memory) {
+        return abi.encodePacked(
+            '<!DOCTYPE html>',
+            '<html lang="en">',
+            '<head>',
+                '<meta charset="UTF-8">',
+                '<meta http-equiv="X-UA-Compatible" content="IE=edge">',
+                '<meta name="viewport" content="width=device-width, initial-scale=1.0">',
+                '<title>Check #1234</title>',
+                '<style>',
+                    'html,',
+                    'body {',
+                        'margin: 0;',
+                        'background: #EFEFEF;',
+                    '}',
+                    'svg {',
+                        'max-width: 100vw;',
+                        'max-height: 100vh;',
+                    '}',
+                '</style>',
+            '</head>',
+            '<body>',
+                svg,
+            '</body>',
+            '</html>'
+        );
+    }
 }
