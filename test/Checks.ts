@@ -167,7 +167,7 @@ describe('Checks', () => {
       const toKeep = []
       const toBurn = []
       for (const [index, id] of tokens.entries()) {
-        if (divisorIndex > 1) {
+        if (divisorIndex > -1) {
           fs.writeFileSync(`test/dist/${id}_${divisor}.svg`, await checks.svg(id))
           console.log(`Saved ${id}@${divisor}`)
         }

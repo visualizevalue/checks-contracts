@@ -39,6 +39,10 @@ contract Checks is IChecks, ERC721 {
             check.checks = 80;
             check.divisorIndex = 0;
             check.seed = uint32(Utils.random(uint256(keccak256(abi.encodePacked(msg.sender, id))), 0, 4294967294)); // max is the highest uint32
+            check.colorBand = 10;
+            // check.gradient = 1; // TODO: Gradient steps
+            check.gradient = 1; // TODO: Gradient steps;
+            // TODO: Gradient Directionality
             _mint(msg.sender, id);
         }
     }
@@ -65,6 +69,7 @@ contract Checks is IChecks, ERC721 {
         toKeep.composite[toKeep.divisorIndex] = uint16(burnId);
         toKeep.divisorIndex += 1;
         toKeep.checks = ChecksArt.DIVISORS()[toKeep.divisorIndex];
+        // TODO: gradient breeding
 
         // Perform the burn
         _burn(burnId);

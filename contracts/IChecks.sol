@@ -8,6 +8,8 @@ interface IChecks {
         uint16[7] composite; // The tokenIds that were merged into this one
         uint8 checks; // How many checks are in this
         uint8 divisorIndex; // Easy access to next / previous divisor
+        uint8 colorBand; // 100%, 50%, 25%, 12.5%, 6.25%, 5%, 1.25%
+        uint8 gradient; // whether to omit randomisation and just go through the gradient
     }
 
     struct Checks {

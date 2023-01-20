@@ -9,6 +9,7 @@ import "./IChecks.sol";
 import "hardhat/console.sol";
 
 struct CheckRenderData {
+    IChecks.Check check;
     uint256[] colorIndexes;
     string[] colors;
     string gridColor;
@@ -59,8 +60,14 @@ library ChecksArt {
         uint256 possibleColorChoices = divisorIndex > 0 ? divisors[divisorIndex - 1] * 2 : 80;
 
         uint256[] memory indexes = new uint256[](checksCount);
+        indexes[0] = Utils.random(check.seed, 0, possibleColorChoices - 1);
         for (uint i = 0; i < checksCount; i++) {
-            indexes[i] = Utils.random(check.seed + i, 0, possibleColorChoices - 1);
+            // // TODO: check
+            // if (check.gradient) {
+            // }
+            indexes[i] = check.gradient > 0
+                ? (indexes[0] + i) % 80
+                : Utils.random(check.seed + i, 0, possibleColorChoices - 1);
         }
 
         if (divisorIndex > 0) {
@@ -100,8 +107,13 @@ library ChecksArt {
         // Map over to get the colors.
         string[] memory checkColors = new string[](check.checks);
         string[80] memory allColors = EightyColors.COLORS();
-        for (uint i = 0; i < indexes.length; i++) {
-            checkColors[i] = allColors[indexes[i]];
+
+        // Always set the first color
+        checkColors[0] = allColors[indexes[0]];
+        for (uint i = 1; i < indexes.length; i++) {
+            checkColors[i] = check.gradient > 0
+                ? allColors[(indexes[0] + i * check.gradient) % 80]
+                : allColors[indexes[i]];
         }
 
         return (checkColors, indexes);
@@ -129,10 +141,11 @@ library ChecksArt {
         return checks >= 5 ? 168 : 312;
     }
 
-    function fillAnimation(uint256 offset, string[80] memory allColors) public view returns (
+    function fillAnimation(CheckRenderData memory data, uint256 offset, string[80] memory allColors) public pure returns (
         string memory duration, string memory animation
     ) {
         uint8 count = 20;
+        uint8 gradient = data.check.gradient;
 
         bytes memory values;
         for (uint i = offset; i < offset + 80; i+=4) {
@@ -145,7 +158,7 @@ library ChecksArt {
         return (Utils.uint2str(count * 1), string(values));
     }
 
-    function generateChecks(CheckRenderData memory data) public view returns (string memory) {
+    function generateChecks(CheckRenderData memory data) public pure returns (string memory) {
         bytes memory checksBytes;
         string[80] memory allColors = EightyColors.COLORS();
 
@@ -171,7 +184,7 @@ library ChecksArt {
             string memory translateY = Utils.uint2str(data.rowY);
 
             // Animation
-            (string memory duration, string memory animation) = fillAnimation(data.colorIndexes[i], allColors);
+            (string memory duration, string memory animation) = fillAnimation(data, data.colorIndexes[i], allColors);
 
             checksBytes = abi.encodePacked(checksBytes, abi.encodePacked(
                 '<g transform="translate(', translateX, ', ', translateY, ')">',
@@ -190,21 +203,11 @@ library ChecksArt {
         return string(checksBytes);
     }
 
-    function generateGrid() public pure returns (bytes memory) {
-        bytes memory hl;
-        for (uint i = 0; i < 11; i++) {
-            hl = abi.encodePacked(hl, '<use href="#hl" y="', Utils.uint2str(160 + i*36),'.5"/>');
-        }
-        bytes memory vl;
-        for (uint i = 0; i < 9; i++) {
-            vl = abi.encodePacked(vl, '<use href="#vl" x="', Utils.uint2str(195 + i*36),'.5"/>');
-        }
-
-        return abi.encodePacked('<g id="grid">', hl, vl,'</g>');
-    }
-
-    function collectRenderData(IChecks.Check memory check, IChecks.Checks storage checks) public view returns (CheckRenderData memory data) {
+    function collectRenderData(
+        IChecks.Check memory check, IChecks.Checks storage checks
+    ) public view returns (CheckRenderData memory data) {
         // Base config
+        data.check = check;
         data.count = check.checks;
         data.seed = check.seed;
 
@@ -212,16 +215,39 @@ library ChecksArt {
         (string[] memory colors_, uint256[] memory colorIndexes_) = colors(check, checks);
         data.colorIndexes = colorIndexes_;
         data.colors = colors_;
-        data.gridColor = data.count > 0 ? '#191919' : '#191919';
+        data.gridColor = data.count > 0 ? '#191919' : '#F2F2F2';
 
         // Positioning
-        data.scale = data.count > 20 ? '1' : '2.8';
+        data.scale = data.count > 20 ? '1' : data.count > 1 ? '2' : '3';
         data.spaceX = data.count == 80 ? 36 : 72;
         data.spaceY = data.count > 20 ? 36 : 72;
         data.perRow = perRow(data.count);
         data.indent = data.count == 40;
         data.rowX = rowX(data.count);
         data.rowY = rowY(data.count);
+    }
+
+    function generateGridRow() public pure returns (bytes memory) {
+        bytes memory row;
+        for (uint i = 0; i < 8; i++) {
+            row = abi.encodePacked(
+                row,
+                '<use href="#square" x="',Utils.uint2str(196 + i*36),'" y="160"/>'
+            );
+        }
+        return row;
+    }
+
+    function generateGrid() public pure returns (bytes memory) {
+        bytes memory grid;
+        for (uint i = 0; i < 10; i++) {
+            grid = abi.encodePacked(
+                grid,
+                '<use href="#row" y="', Utils.uint2str(i*36), '"/>'
+            );
+        }
+
+        return abi.encodePacked('<g id="grid" x="196" y="160">', grid, '</g>');
     }
 
     function generateSVG(
@@ -237,9 +263,10 @@ library ChecksArt {
             '>',
                 '<defs>',
                     '<path id="check" d="',CHECKS_PATH,'"></path>',
-                    '<rect id="square" width="36" height="36"></rect>',
-                    '<line id="hl" x1="196" x2="484" stroke="',data.gridColor,'"/>',
-                    '<line id="vl" y1="160" y2="520" stroke="',data.gridColor,'"/>',
+                    '<rect id="square" width="36" height="36" stroke="',data.gridColor,'"></rect>',
+                    '<g id="row">', generateGridRow(),'</g>'
+                    // '<line id="hl" x1="196" x2="484" stroke="',data.gridColor,'"/>',
+                    // '<line id="vl" y1="160" y2="520" stroke="',data.gridColor,'"/>',
                 '</defs>',
                 '<rect width="680" height="680" fill="black"/>',
                 '<rect x="188" y="152" width="304" height="376" fill="#111111"/>',
