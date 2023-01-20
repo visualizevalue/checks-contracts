@@ -4,10 +4,10 @@ pragma solidity ^0.8.17;
 interface IChecks {
 
     struct Check {
+        uint32 seed; // Seed for the color randomisation
+        uint16[7] composite; // The tokenIds that were merged into this one
         uint8 checks; // How many checks are in this
         uint8 divisorIndex; // Easy access to next / previous divisor
-        uint16[7] composite; // The tokenIds that were merged into this one
-        uint32 seed; // Seed for the color randomisation
     }
 
     struct Checks {

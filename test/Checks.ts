@@ -26,6 +26,8 @@ const VV_TOKENS = [
 describe('Checks', () => {
   async function deployChecksFixture() {
     let
+        EightyColors,
+        eightyColors,
         ChecksArt,
         checksArt,
         Utils,
@@ -43,9 +45,14 @@ describe('Checks', () => {
     utils = await Utils.deploy()
     await utils.deployed()
 
+    EightyColors = await ethers.getContractFactory('EightyColors')
+    eightyColors = await EightyColors.deploy()
+    await eightyColors.deployed()
+
     ChecksArt = await ethers.getContractFactory('ChecksArt', {
       libraries: {
         Utils: utils.address,
+        EightyColors: eightyColors.address,
       }
     })
     checksArt = await ChecksArt.deploy()
@@ -186,7 +193,7 @@ describe('Checks', () => {
     }
 
 
-    it.skip('Should allow to composite originals', async () => {
+    it.only('Should allow to composite originals', async () => {
       const { checks, vv } = await loadFixture(mintedFixture)
 
       await composite(VV_TOKENS.slice(0, 64), checks, vv)
