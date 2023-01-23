@@ -10,6 +10,7 @@ interface IChecks {
         uint8 divisorIndex; // Easy access to next / previous divisor
         uint8 colorBand; // 100%, 50%, 25%, 12.5%, 6.25%, 5%, 1.25%
         uint8 gradient; // whether to omit randomisation and just go through the gradient
+        uint8 speed;
     }
 
     struct Checks {

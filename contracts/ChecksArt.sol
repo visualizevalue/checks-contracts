@@ -29,31 +29,16 @@ struct CheckRenderData {
 }
 
 library ChecksArt {
-    string public constant CHECKS_PATH = 'M20 10.476c0-1.505-.833-2.81-2.046-3.428.147-.415.227-.862.227-1.334 0-2.104-1.629-3.807-3.636-3.807-.448 0-.876.08-1.272.238C12.684.87 11.438 0 10 0 8.562 0 7.319.873 6.727 2.143a3.434 3.434 0 0 0-1.272-.238c-2.01 0-3.636 1.705-3.636 3.81 0 .47.079.917.226 1.333C.833 7.667 0 8.97 0 10.476c0 1.424.745 2.665 1.85 3.32-.02.162-.031.324-.031.49 0 2.104 1.627 3.81 3.636 3.81.448 0 .876-.083 1.271-.239C7.316 19.127 8.561 20 10 20c1.44 0 2.683-.872 3.273-2.143.395.155.824.236 1.272.236 2.01 0 3.636-1.704 3.636-3.81 0-.165-.011-.327-.031-.488C19.252 13.141 20 11.9 20 10.477Zm-6.3-3.175-4.128 6.19a.713.713 0 0 1-.991.199l-.11-.09-2.3-2.3a.713.713 0 1 1 1.01-1.01l1.685 1.683 3.643-5.466a.715.715 0 0 1 1.19.793v.001Z';
+    string public constant CHECKS_PATH = 'M21.36 9.886A3.933 3.933 0 0 0 18 8c-1.423 0-2.67.755-3.36 1.887a3.935 3.935 0 0 0-4.753 4.753A3.933 3.933 0 0 0 8 18c0 1.423.755 2.669 1.886 3.36a3.935 3.935 0 0 0 4.753 4.753 3.933 3.933 0 0 0 4.863 1.59 3.953 3.953 0 0 0 1.858-1.589 3.935 3.935 0 0 0 4.753-4.754A3.933 3.933 0 0 0 28 18a3.933 3.933 0 0 0-1.887-3.36 3.934 3.934 0 0 0-1.042-3.711 3.934 3.934 0 0 0-3.71-1.043Zm-3.958 11.713 4.562-6.844c.566-.846-.751-1.724-1.316-.878l-4.026 6.043-1.371-1.368c-.717-.722-1.836.396-1.116 1.116l2.17 2.15a.788.788 0 0 0 1.097-.22Z';
 
     function DIVISORS() public pure returns (uint8[8] memory) {
         return [ 80, 40, 20, 10, 5, 4, 1, 0 ];
     }
 
-    // function COLORS() public pure returns (string[80] memory) {
-    //     return [
-    //         '#DB395E', '#525EAA', '#977A31', '#2E668B', '#33758D', '#4068C1', '#F2A43A', '#ED7C30',
-    //         '#F9DA4A', '#322F92', '#5C83CB', '#FBEA5B', '#E73E53', '#DA3321', '#9AD9FB', '#77D3DE',
-    //         '#D6F4E1', '#F0A0CA', '#F2B341', '#2E4985', '#25438C', '#EB5A2A', '#DB4D58', '#5FCD8C',
-    //         '#FAE663', '#8A2235', '#A4C8EE', '#81D1EC', '#D97D2E', '#F9DB49', '#85C33C', '#EA3A2D',
-    //         '#5A9F3E', '#EF8C37', '#F7CA57', '#EB4429', '#A7DDF9', '#F2A93B', '#F2A840', '#DE3237',
-    //         '#602263', '#EC7368', '#D5332F', '#F6CBA6', '#F09837', '#F9DA4D', '#5ABAD3', '#3E8BA3',
-    //         '#C7EDF2', '#E8424E', '#B1EFC9', '#93CF98', '#2F2243', '#2D5352', '#F7DD9B', '#6A552A',
-    //         '#D1DF4F', '#4D3658', '#EA5B33', '#5FC9BF', '#7A2520', '#B82C36', '#F2A93C', '#4291A8',
-    //         '#F4BDBE', '#FAE272', '#EF8933', '#3B2F39', '#ABDD45', '#4AA392', '#C23532', '#F6CB45',
-    //         '#6D2F22', '#535687', '#EE837D', '#E0C963', '#9DEFBF', '#60B1F4', '#EE828F', '#7A5AB4',
-    //         '#FFF'
-    //     ];
-    // }
-
     /// @dev Generate indexes for the color slots of its parent (root being the COLORS themselves).
-    function colorIndexes(uint8 divisorIndex, IChecks.Check memory check, IChecks.Checks storage checks)
-        public view returns (uint256[] memory)
+    function colorIndexes(
+        uint8 divisorIndex, IChecks.Check memory check, IChecks.Checks storage checks
+    ) public view returns (uint256[] memory)
     {
         uint8[8] memory divisors = DIVISORS();
         uint256 checksCount = divisors[divisorIndex];
@@ -62,11 +47,8 @@ library ChecksArt {
         uint256[] memory indexes = new uint256[](checksCount);
         indexes[0] = Utils.random(check.seed, 0, possibleColorChoices - 1);
         for (uint i = 0; i < checksCount; i++) {
-            // // TODO: check
-            // if (check.gradient) {
-            // }
             indexes[i] = check.gradient > 0
-                ? (indexes[0] + i) % 80
+                ? (indexes[0] + i * check.gradient) % 80
                 : Utils.random(check.seed + i, 0, possibleColorChoices - 1);
         }
 
@@ -111,9 +93,7 @@ library ChecksArt {
         // Always set the first color
         checkColors[0] = allColors[indexes[0]];
         for (uint i = 1; i < indexes.length; i++) {
-            checkColors[i] = check.gradient > 0
-                ? allColors[(indexes[0] + i * check.gradient) % 80]
-                : allColors[indexes[i]];
+            checkColors[i] = allColors[indexes[i]];
         }
 
         return (checkColors, indexes);
@@ -131,21 +111,20 @@ library ChecksArt {
 
     function rowX(uint8 checks) public pure returns (uint16) {
         return checks <= 1 || checks == 5
-            ? 312
+            ? 304
             : checks == 10
-                ? 276
-                : 204;
+                ? 268
+                : 196;
     }
 
     function rowY(uint8 checks) public pure returns (uint16) {
-        return checks >= 5 ? 168 : 312;
+        return checks > 4 ? 160 : 304;
     }
 
     function fillAnimation(CheckRenderData memory data, uint256 offset, string[80] memory allColors) public pure returns (
         string memory duration, string memory animation
     ) {
         uint8 count = 20;
-        uint8 gradient = data.check.gradient;
 
         bytes memory values;
         for (uint i = offset; i < offset + 80; i+=4) {
@@ -155,7 +134,7 @@ library ChecksArt {
         // Add initial color as last one for smooth animations
         values = abi.encodePacked(values, '#', allColors[offset]);
 
-        return (Utils.uint2str(count * 1), string(values));
+        return (Utils.uint2str(count / data.check.speed), string(values));
     }
 
     function generateChecks(CheckRenderData memory data) public pure returns (string memory) {
@@ -187,8 +166,8 @@ library ChecksArt {
             (string memory duration, string memory animation) = fillAnimation(data, data.colorIndexes[i], allColors);
 
             checksBytes = abi.encodePacked(checksBytes, abi.encodePacked(
-                '<g transform="translate(', translateX, ', ', translateY, ')">',
-                    '<use href="#check" transform="scale(',data.scale,')" fill="#',data.colors[i],'">',
+                '<g transform="translate(', translateX, ', ', translateY, ') scale(', data.scale, ')">',
+                    '<use href="#check" fill="#',data.colors[i],'">',
                     // '<use href="#square" transform="translate(-8, -7) scale(',data.count > 20 ? '1' : '2',')" fill="#',data.colors[i],'">',
                         '<animate ',
                             'attributeName="fill" values="',animation,'" ',
@@ -262,7 +241,7 @@ library ChecksArt {
                 'style="width:100%;background:black;"',
             '>',
                 '<defs>',
-                    '<path id="check" d="',CHECKS_PATH,'"></path>',
+                    '<path id="check" fill-rule="evenodd" d="',CHECKS_PATH,'"></path>',
                     '<rect id="square" width="36" height="36" stroke="',data.gridColor,'"></rect>',
                     '<g id="row">', generateGridRow(),'</g>'
                     // '<line id="hl" x1="196" x2="484" stroke="',data.gridColor,'"/>',

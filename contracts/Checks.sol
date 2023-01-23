@@ -27,12 +27,14 @@ contract Checks is IChecks, ERC721 {
         require(editionChecks.isApprovedForAll(msg.sender, address(this)), "Edition burn not approved");
 
         // Make sure all referenced Editions are owned by or approved to the minter.
-        for (uint i = 0; i < count; i++) {
+        for (uint i = 0; i < count;) {
             require(editionChecks.ownerOf(tokenIds[i]) == msg.sender, "Minter not the owner");
+
+            unchecked { i++; }
         }
 
         // Burn the Editions for the given tokenIds & mint the Originals.
-        for (uint i = 0; i < count; i++) {
+        for (uint i = 0; i < count;) {
             uint256 id = tokenIds[i];
             editionChecks.burn(id);
             Check storage check = checks.all[id];
@@ -41,9 +43,12 @@ contract Checks is IChecks, ERC721 {
             check.seed = uint32(Utils.random(uint256(keccak256(abi.encodePacked(msg.sender, id))), 0, 4294967294)); // max is the highest uint32
             check.colorBand = 10;
             // check.gradient = 1; // TODO: Gradient steps
-            check.gradient = 1; // TODO: Gradient steps;
+            check.gradient = 8; // TODO: Gradient steps;
+            check.speed = 8;
             // TODO: Gradient Directionality
             _mint(msg.sender, id);
+
+            unchecked { i++; }
         }
     }
 
@@ -82,16 +87,20 @@ contract Checks is IChecks, ERC721 {
         uint256 pairs = tokenIds.length;
         require(pairs == burnIds.length, "Invalid number of tokens to composite");
 
-        for (uint i = 0; i < pairs; i++) {
+        for (uint i = 0; i < pairs;) {
             composite(tokenIds[i], burnIds[i]);
+
+            unchecked { i++; }
         }
     }
 
     function infinity(uint256[] calldata tokenIds) public {
         uint256 count = tokenIds.length;
         require(count == 64, "Final composite requires 64 single Checks");
-        for (uint i = 0; i < count; i++) {
+        for (uint i = 0; i < count;) {
             require(checks.all[tokenIds[i]].checks == 1, "Non-single Check used");
+
+            unchecked { i++; }
         }
 
         // Complete final composite.
@@ -101,8 +110,10 @@ contract Checks is IChecks, ERC721 {
         check.divisorIndex = 7;
 
         // Burn all 63 other Checks.
-        for (uint i = 1; i < count; i++) {
+        for (uint i = 1; i < count;) {
             _burn(tokenIds[i]);
+
+            unchecked { i++; }
         }
 
         // Notify final composite.
