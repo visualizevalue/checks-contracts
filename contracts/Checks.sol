@@ -3,9 +3,10 @@ pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
-import './IChecksEdition.sol';
-import './IChecks.sol';
-import './ChecksArt.sol';
+import "./IChecksEdition.sol";
+import "./IChecks.sol";
+import "./ChecksArt.sol";
+import "./ChecksMetadata.sol";
 import "./Utilities.sol";
 
 // import "hardhat/console.sol";
@@ -135,6 +136,6 @@ contract Checks is IChecks, ERC721 {
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
         _requireMinted(tokenId);
 
-        return ChecksArt.tokenURI(tokenId, checks.all[tokenId], checks);
+        return ChecksMetadata.tokenURI(tokenId, checks.all[tokenId], checks);
     }
 }

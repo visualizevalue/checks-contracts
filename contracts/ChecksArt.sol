@@ -1,7 +1,6 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-import "@openzeppelin/contracts/utils/Base64.sol";
 import "./EightyColors.sol";
 import "./Utilities.sol";
 import "./IChecks.sol";
@@ -110,15 +109,21 @@ library ChecksArt {
     }
 
     function rowX(uint8 checks) public pure returns (uint16) {
-        return checks <= 1 || checks == 5
-            ? 304
-            : checks == 10
-                ? 268
-                : 196;
+        return checks <= 1
+            ? 286
+            : checks == 5
+                ? 304
+                : checks == 10
+                    ? 268
+                    : 196;
     }
 
     function rowY(uint8 checks) public pure returns (uint16) {
-        return checks > 4 ? 160 : 304;
+        return checks > 4
+            ? 160
+            : checks > 1
+                ? 304
+                : 286;
     }
 
     function fillAnimation(CheckRenderData memory data, uint256 offset, string[80] memory allColors) public pure returns (
@@ -186,9 +191,8 @@ library ChecksArt {
     function collectRenderData(
         IChecks.Check memory check, IChecks.Checks storage checks
     ) public view returns (CheckRenderData memory data) {
-        // Base config
+        // Carry over the check
         data.check = check;
-        data.seed = check.seed;
 
         // Colors
         (string[] memory colors_, uint256[] memory colorIndexes_) = colors(check, checks);
@@ -244,8 +248,6 @@ library ChecksArt {
                     '<path id="check" fill-rule="evenodd" d="',CHECKS_PATH,'"></path>',
                     '<rect id="square" width="36" height="36" stroke="',data.gridColor,'"></rect>',
                     '<g id="row">', generateGridRow(),'</g>'
-                    // '<line id="hl" x1="196" x2="484" stroke="',data.gridColor,'"/>',
-                    // '<line id="vl" y1="160" y2="520" stroke="',data.gridColor,'"/>',
                 '</defs>',
                 '<rect width="680" height="680" fill="black"/>',
                 '<rect x="188" y="152" width="304" height="376" fill="#111111"/>',
@@ -263,59 +265,6 @@ library ChecksArt {
                     '/>',
                 '</rect>',
             '</svg>'
-        );
-    }
-
-    function tokenURI(uint256 tokenId, IChecks.Check memory check, IChecks.Checks storage checks) public view returns (string memory) {
-        bytes memory svg = generateSVG(check, checks);
-        bytes memory metadata = abi.encodePacked(
-            '{',
-                '"name": "Checks ', tokenId, '",',
-                '"description": "This artwork may or may not be notable",',
-                '"image": ',
-                    '"data:image/svg+xml;base64,',
-                    Base64.encode(svg),
-                    '"',
-                '"animation_url": ',
-                    '"data:text/html;base64,',
-                    Base64.encode(generateHTML(svg)),
-                    '"',
-            '}'
-        );
-
-        return string(
-            abi.encodePacked(
-                "data:application/json;base64,",
-                Base64.encode(metadata)
-            )
-        );
-    }
-
-    function generateHTML(bytes memory svg) public pure returns (bytes memory) {
-        return abi.encodePacked(
-            '<!DOCTYPE html>',
-            '<html lang="en">',
-            '<head>',
-                '<meta charset="UTF-8">',
-                '<meta http-equiv="X-UA-Compatible" content="IE=edge">',
-                '<meta name="viewport" content="width=device-width, initial-scale=1.0">',
-                '<title>Check #1234</title>',
-                '<style>',
-                    'html,',
-                    'body {',
-                        'margin: 0;',
-                        'background: #EFEFEF;',
-                    '}',
-                    'svg {',
-                        'max-width: 100vw;',
-                        'max-height: 100vh;',
-                    '}',
-                '</style>',
-            '</head>',
-            '<body>',
-                svg,
-            '</body>',
-            '</html>'
         );
     }
 }
