@@ -1,4 +1,3 @@
-import { Contract, Signer} from 'ethers'
 import { parseEther } from 'ethers/lib/utils'
 import { EDITIONS, JALIL, VV, WHALE } from '../helpers/constants';
 const hre = require('hardhat')

@@ -14,6 +14,7 @@ import "./Utilities.sol";
 contract Checks is IChecks, ERC721 {
     IChecksEdition public editionChecks;
 
+    // Our DB
     Checks checks;
 
     constructor() ERC721("Checks", "Check") {
@@ -22,7 +23,7 @@ contract Checks is IChecks, ERC721 {
     }
 
     function mint(uint256[] calldata tokenIds) public {
-        uint256 count = tokenIds.length;
+        uint32 count = uint32(tokenIds.length);
 
         // Make sure we have the Editions burn approval from the minter.
         require(editionChecks.isApprovedForAll(msg.sender, address(this)), "Edition burn not approved");
@@ -34,6 +35,8 @@ contract Checks is IChecks, ERC721 {
             unchecked { i++; }
         }
 
+        uint32 maxSeed = 4294967295;
+
         // Burn the Editions for the given tokenIds & mint the Originals.
         for (uint i = 0; i < count;) {
             uint256 id = tokenIds[i];
@@ -41,16 +44,25 @@ contract Checks is IChecks, ERC721 {
             Check storage check = checks.all[id];
             check.checksCount = 80;
             check.divisorIndex = 0;
-            check.seed = uint32(Utils.random(uint256(keccak256(abi.encodePacked(msg.sender, id))), 0, 4294967294)); // max is the highest uint32
+            check.seed = uint32(Utils.random(uint256(keccak256(abi.encodePacked(msg.sender, id, checks.minted))), 0, maxSeed)); // max is the highest uint32
             check.colorBand = 10;
-            // check.gradient = 1; // TODO: Gradient steps
-            check.gradient = 8; // TODO: Gradient steps;
+            check.gradient = 1;// [0, 1, 2, 4, 8]; // TODO: Gradient steps;
             check.speed = 8;
             // TODO: Gradient Directionality
             _mint(msg.sender, id);
 
             unchecked { i++; }
         }
+
+        // Keep track of how many checks have been minted
+        unchecked { checks.minted += count; }
+    }
+
+    function burn(uint256 tokenId) external virtual {
+        require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC721: caller is not token owner or approved");
+        _burn(tokenId);
+
+        unchecked { checks.minted--; }
     }
 
     function getCheck(uint256 tokenId) external view returns (Check memory) {
@@ -60,28 +72,9 @@ contract Checks is IChecks, ERC721 {
     }
 
     function composite(uint256 tokenId, uint256 burnId) public {
-        require(tokenId != burnId, "Can't composit the same token");
-        require(
-            _isApprovedOrOwner(msg.sender, tokenId) && _isApprovedOrOwner(msg.sender, burnId),
-            "Not the owner or approved"
-        );
+        _composite(tokenId, burnId);
 
-        Check storage toKeep = checks.all[tokenId];
-        Check storage toBurn = checks.all[tokenId];
-        require(toKeep.checksCount == toBurn.checksCount, "Can only composite from same type");
-        require(toKeep.checksCount > 0, "Can't composite a black check");
-
-        // Composite our check
-        toKeep.composite[toKeep.divisorIndex] = uint16(burnId);
-        toKeep.divisorIndex += 1;
-        toKeep.checksCount = ChecksArt.DIVISORS()[toKeep.divisorIndex];
-        // TODO: gradient breeding
-
-        // Perform the burn
-        _burn(burnId);
-
-        // Notify composite
-        emit IChecks.Composite(tokenId, burnId, toKeep.checksCount);
+        unchecked { checks.burned ++; }
     }
 
     function compositeMany(uint256[] calldata tokenIds, uint256[] calldata burnIds) public {
@@ -93,6 +86,8 @@ contract Checks is IChecks, ERC721 {
 
             unchecked { i++; }
         }
+
+        unchecked { checks.burned += uint32(pairs); }
     }
 
     function infinity(uint256[] calldata tokenIds) public {
@@ -137,5 +132,34 @@ contract Checks is IChecks, ERC721 {
         _requireMinted(tokenId);
 
         return ChecksMetadata.tokenURI(tokenId, checks.all[tokenId], checks);
+    }
+
+    function totalSupply() public view returns (uint256) {
+        return checks.minted - checks.burned;
+    }
+
+    function _composite(uint256 tokenId, uint256 burnId) internal {
+        require(tokenId != burnId, "Can't composit the same token");
+        require(
+            _isApprovedOrOwner(msg.sender, tokenId) && _isApprovedOrOwner(msg.sender, burnId),
+            "Not the owner or approved"
+        );
+
+        Check storage toKeep = checks.all[tokenId];
+        Check storage toBurn = checks.all[tokenId];
+        require(toKeep.checksCount == toBurn.checksCount, "Can only composite from same type");
+        require(toKeep.checksCount > 0, "Can't composite a black check");
+
+        // Composite our check
+        toKeep.composite[toKeep.divisorIndex] = uint16(burnId);
+        toKeep.divisorIndex += 1;
+        toKeep.checksCount = ChecksArt.DIVISORS()[toKeep.divisorIndex];
+        // TODO: gradient breeding
+
+        // Perform the burn
+        _burn(burnId);
+
+        // Notify composite
+        emit IChecks.Composite(tokenId, burnId, toKeep.checksCount);
     }
 }

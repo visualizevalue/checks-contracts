@@ -5,8 +5,6 @@ import "./EightyColors.sol";
 import "./Utilities.sol";
 import "./IChecks.sol";
 
-import "hardhat/console.sol";
-
 struct CheckRenderData {
     IChecks.Check check;
     uint256[] colorIndexes;

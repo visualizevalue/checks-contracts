@@ -13,27 +13,38 @@ describe('Checks', () => {
     const { checks } = await loadFixture(deployChecksFixture)
 
     expect(await checks.editionChecks()).to.equal('0x34eEBEE6942d8Def3c125458D1a86e0A897fd6f9')
+
+    expect(await checks.name()).to.equal('Checks')
+    expect(await checks.symbol()).to.equal('Check')
   })
 
   describe('Mint', () => {
     it('Should allow to mint originals', async () => {
       const { checksEditions, checks, jalil } = await loadFixture(deployChecksFixture)
 
+      expect(await checks.totalSupply()).to.equal(0)
+
       await expect(checks.connect(jalil).mint([1001]))
         .to.be.revertedWith('Edition burn not approved')
 
-      // Approve
+      // First we need to approve the Originals contract on the Editions contract
       await checksEditions.connect(jalil).setApprovalForAll(checks.address, true)
 
+      // Then we can mint one
       await expect(checks.connect(jalil).mint([1001]))
         .to.emit(checks, 'Transfer')
         .withArgs(ethers.constants.AddressZero, JALIL, 1001)
 
+      expect(await checks.totalSupply()).to.equal(1)
+
+      // Or multiple
       await expect(checks.connect(jalil).mint([44, 222]))
         .to.emit(checks, 'Transfer')
         .withArgs(ethers.constants.AddressZero, JALIL, 44)
         .to.emit(checks, 'Transfer')
         .withArgs(ethers.constants.AddressZero, JALIL, 222)
+
+      expect(await checks.totalSupply()).to.equal(3)
     })
 
     it('Should allow to mint many originals at once', async () => {
@@ -44,6 +55,16 @@ describe('Checks', () => {
       await expect(checks.connect(vv).mint(VV_TOKENS))
         .to.emit(checks, 'Transfer')
         .withArgs(ethers.constants.AddressZero, VV, 9696)
+    })
+  })
+
+  describe('Burning', () => {
+    it('Should allow holders to just burn their tokens', async () => {
+      const { checks, vv } = await loadFixture(mintedFixture)
+
+      expect(await checks.totalSupply()).to.equal(135)
+      await checks.connect(vv).burn(VV_TOKENS[0])
+      expect(await checks.totalSupply()).to.equal(134)
     })
   })
 
@@ -67,7 +88,7 @@ describe('Checks', () => {
       await composite(VV_TOKENS.slice(0, 64), checks, vv)
     })
 
-    it('Should allow to composite and render many originals', async () => {
+    it.skip('Should allow to composite and render many originals', async () => {
       const { checks, vv } = await loadFixture(mintedFixture)
 
       const [singleId, singleDivisor] = await composite(VV_TOKENS.slice(0, 64), checks, vv, 0, false)

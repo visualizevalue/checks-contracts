@@ -57,7 +57,7 @@ library EightyColors {
             '83F1AE',
             '5FCD8C',
             '9DEFBF',
-            '2E9D9A', // here
+            '2E9D9A',
             '3EB8A1',
             '5FC9BF',
             '77D3DE',
@@ -82,7 +82,7 @@ library EightyColors {
             '4A2387',
             '371471',
             '3B088C',
-            '9741DA', // 79
+            '9741DA',
             '6C31D7'
         ];
     }
