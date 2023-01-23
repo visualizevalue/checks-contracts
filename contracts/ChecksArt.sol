@@ -77,7 +77,7 @@ library ChecksArt {
         IChecks.Check memory check, IChecks.Checks storage checks
     ) public view returns (string[] memory, uint256[] memory) {
         // A fully composited check has no color.
-        if (check.checks == 0) {
+        if (check.checksCount == 0) {
             string[] memory zeroColors;
             zeroColors[0] = '#FFF';
             return (zeroColors, new uint256[](999));
@@ -87,7 +87,7 @@ library ChecksArt {
         uint256[] memory indexes = colorIndexes(check.divisorIndex, check, checks);
 
         // Map over to get the colors.
-        string[] memory checkColors = new string[](check.checks);
+        string[] memory checkColors = new string[](check.checksCount);
         string[80] memory allColors = EightyColors.COLORS();
 
         // Always set the first color
@@ -141,7 +141,8 @@ library ChecksArt {
         bytes memory checksBytes;
         string[80] memory allColors = EightyColors.COLORS();
 
-        for (uint8 i = 0; i < data.count; i++) {
+        uint8 checksCount = data.check.checksCount;
+        for (uint8 i = 0; i < checksCount; i++) {
             // Row Positioning
             data.indexInRow = i % data.perRow;
             data.isNewRow = data.indexInRow == 0 && i > 0;
@@ -168,7 +169,7 @@ library ChecksArt {
             checksBytes = abi.encodePacked(checksBytes, abi.encodePacked(
                 '<g transform="translate(', translateX, ', ', translateY, ') scale(', data.scale, ')">',
                     '<use href="#check" fill="#',data.colors[i],'">',
-                    // '<use href="#square" transform="translate(-8, -7) scale(',data.count > 20 ? '1' : '2',')" fill="#',data.colors[i],'">',
+                    // '<use href="#square" transform="translate(-8, -7) scale(',checksCount > 20 ? '1' : '2',')" fill="#',data.colors[i],'">',
                         '<animate ',
                             'attributeName="fill" values="',animation,'" ',
                             'dur="',duration,'s" begin="animation.begin" ',
@@ -187,23 +188,22 @@ library ChecksArt {
     ) public view returns (CheckRenderData memory data) {
         // Base config
         data.check = check;
-        data.count = check.checks;
         data.seed = check.seed;
 
         // Colors
         (string[] memory colors_, uint256[] memory colorIndexes_) = colors(check, checks);
         data.colorIndexes = colorIndexes_;
         data.colors = colors_;
-        data.gridColor = data.count > 0 ? '#191919' : '#F2F2F2';
+        data.gridColor = check.checksCount > 0 ? '#191919' : '#F2F2F2';
 
         // Positioning
-        data.scale = data.count > 20 ? '1' : data.count > 1 ? '2' : '3';
-        data.spaceX = data.count == 80 ? 36 : 72;
-        data.spaceY = data.count > 20 ? 36 : 72;
-        data.perRow = perRow(data.count);
-        data.indent = data.count == 40;
-        data.rowX = rowX(data.count);
-        data.rowY = rowY(data.count);
+        data.scale = check.checksCount > 20 ? '1' : check.checksCount > 1 ? '2' : '3';
+        data.spaceX = check.checksCount == 80 ? 36 : 72;
+        data.spaceY = check.checksCount > 20 ? 36 : 72;
+        data.perRow = perRow(check.checksCount);
+        data.indent = check.checksCount == 40;
+        data.rowX = rowX(check.checksCount);
+        data.rowY = rowY(check.checksCount);
     }
 
     function generateGridRow() public pure returns (bytes memory) {

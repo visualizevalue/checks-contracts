@@ -38,7 +38,7 @@ contract Checks is IChecks, ERC721 {
             uint256 id = tokenIds[i];
             editionChecks.burn(id);
             Check storage check = checks.all[id];
-            check.checks = 80;
+            check.checksCount = 80;
             check.divisorIndex = 0;
             check.seed = uint32(Utils.random(uint256(keccak256(abi.encodePacked(msg.sender, id))), 0, 4294967294)); // max is the highest uint32
             check.colorBand = 10;
@@ -67,20 +67,20 @@ contract Checks is IChecks, ERC721 {
 
         Check storage toKeep = checks.all[tokenId];
         Check storage toBurn = checks.all[tokenId];
-        require(toKeep.checks == toBurn.checks, "Can only composite from same type");
-        require(toKeep.checks > 0, "Can't composite a black check");
+        require(toKeep.checksCount == toBurn.checksCount, "Can only composite from same type");
+        require(toKeep.checksCount > 0, "Can't composite a black check");
 
         // Composite our check
         toKeep.composite[toKeep.divisorIndex] = uint16(burnId);
         toKeep.divisorIndex += 1;
-        toKeep.checks = ChecksArt.DIVISORS()[toKeep.divisorIndex];
+        toKeep.checksCount = ChecksArt.DIVISORS()[toKeep.divisorIndex];
         // TODO: gradient breeding
 
         // Perform the burn
         _burn(burnId);
 
         // Notify composite
-        emit IChecks.Composite(tokenId, burnId, toKeep.checks);
+        emit IChecks.Composite(tokenId, burnId, toKeep.checksCount);
     }
 
     function compositeMany(uint256[] calldata tokenIds, uint256[] calldata burnIds) public {
@@ -98,7 +98,7 @@ contract Checks is IChecks, ERC721 {
         uint256 count = tokenIds.length;
         require(count == 64, "Final composite requires 64 single Checks");
         for (uint i = 0; i < count;) {
-            require(checks.all[tokenIds[i]].checks == 1, "Non-single Check used");
+            require(checks.all[tokenIds[i]].checksCount == 1, "Non-single Check used");
 
             unchecked { i++; }
         }
@@ -106,7 +106,7 @@ contract Checks is IChecks, ERC721 {
         // Complete final composite.
         uint256 id = tokenIds[0];
         Check storage check = checks.all[id];
-        check.checks = 0;
+        check.checksCount = 0;
         check.divisorIndex = 7;
 
         // Burn all 63 other Checks.
