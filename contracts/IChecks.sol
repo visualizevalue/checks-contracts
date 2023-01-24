@@ -3,6 +3,17 @@ pragma solidity ^0.8.17;
 
 interface IChecks {
 
+    struct StoredCheck {
+        uint32 seed;          // The seed is based the mint and enables pseudo-randomisation
+        uint16[6] composite; // The tokenIds that were composited into this one
+        uint8 divisorIndex; // Easy access to next / previous divisor
+
+        // TODO: Refactor
+        uint8 colorBand;  // 100%, 50%, 25%, 12.5%, 6.25%, 5%, 1.25%
+        uint8 gradient;  // Linearly through the colorBand [1, 2, 3]
+        uint8 speed;    // Animation speed
+    }
+
     struct Check {
         uint32 seed;          // The seed is based the mint and enables pseudo-randomisation
         uint16[6] composite; // The tokenIds that were composited into this one
@@ -16,7 +27,7 @@ interface IChecks {
     struct Checks {
         uint32 minted;
         uint32 burned;
-        mapping(uint256 => Check) all;
+        mapping(uint256 => StoredCheck) all;
     }
 
     event Composite(

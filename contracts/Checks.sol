@@ -48,9 +48,8 @@ contract Checks is IChecks, ERC721 {
             editionChecks.burn(id);
 
             // Initialize Check
-            Check storage check = checks.all[id];
+            StoredCheck storage check = checks.all[id];
             check.divisorIndex = 0;
-            check.checksCount = 80;
 
             // Randomized input
             uint256 seed = randomizer + id;
@@ -87,10 +86,10 @@ contract Checks is IChecks, ERC721 {
         unchecked { checks.minted += count; }
     }
 
-    function getCheck(uint256 tokenId) external view returns (Check memory) {
+    function getCheck(uint256 tokenId) public view returns (Check memory check) {
         _requireMinted(tokenId);
 
-        return checks.all[tokenId];
+        return ChecksArt.getCheck(tokenId, checks);
     }
 
     function composite(uint256 tokenId, uint256 burnId) public {
@@ -116,15 +115,14 @@ contract Checks is IChecks, ERC721 {
         uint256 count = tokenIds.length;
         require(count == 64, "Final composite requires 64 single Checks");
         for (uint i = 0; i < count;) {
-            require(checks.all[tokenIds[i]].checksCount == 1, "Non-single Check used");
+            require(checks.all[tokenIds[i]].divisorIndex == 6, "Non-single Check used");
 
             unchecked { i++; }
         }
 
         // Complete final composite.
         uint256 id = tokenIds[0];
-        Check storage check = checks.all[id];
-        check.checksCount = 0;
+        StoredCheck storage check = checks.all[id];
         check.divisorIndex = 7;
 
         // Burn all 63 other Checks.
@@ -147,22 +145,19 @@ contract Checks is IChecks, ERC721 {
 
     function colors(uint256 tokenId) external view returns (string[] memory, uint256[] memory)
     {
-        Check memory check = checks.all[tokenId];
-        return ChecksArt.colors(check, checks);
+        return ChecksArt.colors(ChecksArt.getCheck(tokenId, checks), checks);
     }
 
     function svg(uint256 tokenId) external view returns (string memory) {
         _requireMinted(tokenId);
 
-        console.log(tokenId);
-
-        return string(ChecksArt.generateSVG(checks.all[tokenId], checks));
+        return string(ChecksArt.generateSVG(tokenId, checks));
     }
 
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
         _requireMinted(tokenId);
 
-        return ChecksMetadata.tokenURI(tokenId, checks.all[tokenId], checks);
+        return ChecksMetadata.tokenURI(tokenId, checks);
     }
 
     function totalSupply() public view returns (uint256) {
@@ -176,21 +171,21 @@ contract Checks is IChecks, ERC721 {
             "Not the owner or approved"
         );
 
-        Check storage toKeep = checks.all[tokenId];
-        Check storage toBurn = checks.all[tokenId];
-        require(toKeep.checksCount == toBurn.checksCount, "Can only composite from same type");
-        require(toKeep.checksCount > 0, "Can't composite a black check");
+        StoredCheck storage toKeep = checks.all[tokenId];
+        StoredCheck storage toBurn = checks.all[tokenId];
+        require(toKeep.divisorIndex == toBurn.divisorIndex, "Can only composite from same type");
+        require(toKeep.divisorIndex < 6, "Can't composite single checks");
 
         // Composite our check
         toKeep.composite[toKeep.divisorIndex] = uint16(burnId);
         toKeep.divisorIndex += 1;
-        toKeep.checksCount = ChecksArt.DIVISORS()[toKeep.divisorIndex];
-        // TODO: gradient breeding
+        // toKeep.checksCount = ChecksArt.DIVISORS()[toKeep.divisorIndex];
+        // // TODO: gradient breeding
 
         // Perform the burn
         _burn(burnId);
 
         // Notify composite
-        emit IChecks.Composite(tokenId, burnId, toKeep.checksCount);
+        emit IChecks.Composite(tokenId, burnId, ChecksArt.DIVISORS()[toKeep.divisorIndex]);
     }
 }

@@ -34,6 +34,24 @@ library ChecksArt {
         return [ 80, 40, 20, 10, 5, 4, 1, 0 ];
     }
 
+    function getCheck(
+        uint256 tokenId, IChecks.Checks storage checks
+    ) public view returns (IChecks.Check memory check) {
+        IChecks.StoredCheck memory stored = checks.all[tokenId];
+
+        check.seed = stored.seed;
+        check.divisorIndex = stored.divisorIndex;
+        check.checksCount = DIVISORS()[stored.divisorIndex];
+        check.composite = stored.composite;
+
+        // TODO: Refactor
+        check.colorBand = stored.colorBand;
+        check.gradient = stored.gradient;
+        check.speed = stored.speed;
+
+        return check;
+    }
+
     /// @dev Generate indexes for the color slots of its parent (root being the COLORS themselves).
     function colorIndexes(
         uint8 divisorIndex, IChecks.Check memory check, IChecks.Checks storage checks
@@ -66,7 +84,7 @@ library ChecksArt {
 
             uint256[] memory parentIndexes = colorIndexes(previousDivisor, check, checks);
 
-            IChecks.Check memory composited = checks.all[check.composite[previousDivisor]];
+            IChecks.Check memory composited = getCheck(check.composite[previousDivisor], checks);
             uint256[] memory compositedIndexes = colorIndexes(previousDivisor, composited, checks);
 
             // Replace random indices with parent / root color indices
@@ -86,7 +104,7 @@ library ChecksArt {
         IChecks.Check memory check, IChecks.Checks storage checks
     ) public view returns (string[] memory, uint256[] memory) {
         // A fully composited check has no color.
-        if (check.checksCount == 0) {
+        if (check.divisorIndex == 7) {
             string[] memory zeroColors;
             zeroColors[0] = '#FFF';
             return (zeroColors, new uint256[](999));
@@ -96,7 +114,7 @@ library ChecksArt {
         uint256[] memory indexes = colorIndexes(check.divisorIndex, check, checks);
 
         // Map over to get the colors.
-        string[] memory checkColors = new string[](check.checksCount);
+        string[] memory checkColors = new string[](indexes.length);
         string[80] memory allColors = EightyColors.COLORS();
 
         // Always set the first color
@@ -156,7 +174,7 @@ library ChecksArt {
         bytes memory checksBytes;
         string[80] memory allColors = EightyColors.COLORS();
 
-        uint8 checksCount = data.check.checksCount;
+        uint8 checksCount = data.count;
         for (uint8 i = 0; i < checksCount; i++) {
             // Row Positioning
             data.indexInRow = i % data.perRow;
@@ -203,21 +221,22 @@ library ChecksArt {
     ) public view returns (CheckRenderData memory data) {
         // Carry over the check
         data.check = check;
+        data.count = DIVISORS()[check.divisorIndex];
 
         // Colors
         (string[] memory colors_, uint256[] memory colorIndexes_) = colors(check, checks);
         data.colorIndexes = colorIndexes_;
         data.colors = colors_;
-        data.gridColor = check.checksCount > 0 ? '#191919' : '#F2F2F2';
+        data.gridColor = data.count > 0 ? '#191919' : '#F2F2F2';
 
         // Positioning
-        data.scale = check.checksCount > 20 ? '1' : check.checksCount > 1 ? '2' : '3';
-        data.spaceX = check.checksCount == 80 ? 36 : 72;
-        data.spaceY = check.checksCount > 20 ? 36 : 72;
-        data.perRow = perRow(check.checksCount);
-        data.indent = check.checksCount == 40;
-        data.rowX = rowX(check.checksCount);
-        data.rowY = rowY(check.checksCount);
+        data.scale = data.count > 20 ? '1' : data.count > 1 ? '2' : '3';
+        data.spaceX = data.count == 80 ? 36 : 72;
+        data.spaceY = data.count > 20 ? 36 : 72;
+        data.perRow = perRow(data.count);
+        data.indent = data.count == 40;
+        data.rowX = rowX(data.count);
+        data.rowY = rowY(data.count);
     }
 
     function generateGridRow() public pure returns (bytes memory) {
@@ -244,9 +263,9 @@ library ChecksArt {
     }
 
     function generateSVG(
-        IChecks.Check memory check, IChecks.Checks storage checks
+        uint256 tokenId, IChecks.Checks storage checks
     ) public view returns (bytes memory) {
-        CheckRenderData memory data = collectRenderData(check, checks);
+        CheckRenderData memory data = collectRenderData(getCheck(tokenId, checks), checks);
 
         return abi.encodePacked(
             '<svg ',

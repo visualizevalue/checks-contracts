@@ -8,9 +8,11 @@ import "./ChecksArt.sol";
 library ChecksMetadata {
 
     function tokenURI(
-        uint256 tokenId, IChecks.Check memory check, IChecks.Checks storage checks
+        uint256 tokenId, IChecks.Checks storage checks
     ) public view returns (string memory) {
-        bytes memory svg = ChecksArt.generateSVG(check, checks);
+        // IChecks.Check memory check = ChecksArt.getCheck(tokenId, checks);
+
+        bytes memory svg = ChecksArt.generateSVG(tokenId, checks);
         bytes memory metadata = abi.encodePacked(
             '{',
                 '"name": "Checks ', tokenId, '",',
