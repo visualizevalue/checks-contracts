@@ -1,9 +1,11 @@
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers'
-import { VV_TOKENS } from '../helpers/constants'
-import { deployChecksFixture } from './deploy'
+import { VV_TOKENS } from '../../helpers/constants'
+import { deployChecks } from './deploy'
+import { impersonateAccounts } from './impersonate'
 
 export async function mintedFixture() {
-  const { checksEditions, checks, jalil, vv } = await await loadFixture(deployChecksFixture)
+  const { checksEditions, checks } = await loadFixture(deployChecks)
+  const { jalil, vv } = await loadFixture(impersonateAccounts)
 
   await checksEditions.connect(jalil).setApprovalForAll(checks.address, true)
   await checks.connect(jalil).mint([

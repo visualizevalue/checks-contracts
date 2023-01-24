@@ -1,6 +1,6 @@
 import { Contract, Signer } from 'ethers'
-import { DIVISORS } from './constants'
-import { render } from './render'
+import { DIVISORS } from '../helpers/constants'
+import { render } from '../helpers/render'
 
 export const composite = async (
   tokens: number[],

@@ -1,28 +1,18 @@
-import * as dotenv from "dotenv";
+import * as dotenv from "dotenv"
 
-import { HardhatUserConfig, task } from "hardhat/config";
-import "@nomiclabs/hardhat-etherscan";
-import "@nomiclabs/hardhat-waffle";
-import "@typechain/hardhat";
-import "hardhat-gas-reporter";
-import "solidity-coverage";
-import "hardhat-contract-sizer";
+import "@nomiclabs/hardhat-etherscan"
+import "@nomiclabs/hardhat-waffle"
+import "@typechain/hardhat"
+import "hardhat-gas-reporter"
+import "solidity-coverage"
+import "hardhat-contract-sizer"
 
+import "./tasks/accounts"
+import "./tasks/deploy"
+import "./tasks/mint"
+import "./tasks/render"
 
-dotenv.config();
-
-// This is a sample Hardhat task. To learn how to create your own go to
-// https://hardhat.org/guides/create-task.html
-task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
-  const accounts = await hre.ethers.getSigners();
-
-  for (const account of accounts) {
-    console.log(account.address);
-  }
-});
-
-// You need to export an object to set up your config
-// Go to https://hardhat.org/config/ to learn more
+dotenv.config()
 
 const HARDHAT_NETWORK_CONFIG = {
   chainId: 1337,
@@ -63,6 +53,6 @@ const config = {
   mocha: {
     timeout: 120_000_000,
   },
-};
+}
 
-export default config;
+export default config

@@ -9,7 +9,7 @@ interface IChecks {
         uint8 divisorIndex; // Easy access to next / previous divisor
         uint8 checksCount; // How many checks this token has
         uint8 colorBand;  // 100%, 50%, 25%, 12.5%, 6.25%, 5%, 1.25%
-        uint8 gradient;  // Whether to omit randomisation and just go through the gradient
+        uint8 gradient;  // Linearly through the colorBand [1, 2, 3]
         uint8 speed;    // Animation speed
     }
 

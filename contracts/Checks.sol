@@ -35,20 +35,54 @@ contract Checks is IChecks, ERC721 {
             unchecked { i++; }
         }
 
-        uint32 maxSeed = 4294967295;
+        // We need a base seed for pseudo-randomization
+        uint256 randomizer = uint256(
+            keccak256(abi.encodePacked(msg.sender, block.coinbase, checks.minted))
+        );
 
         // Burn the Editions for the given tokenIds & mint the Originals.
         for (uint i = 0; i < count;) {
             uint256 id = tokenIds[i];
+
+            // Burn the edition
             editionChecks.burn(id);
+
+            // Initialize Check
             Check storage check = checks.all[id];
-            check.checksCount = 80;
             check.divisorIndex = 0;
-            check.seed = uint32(Utils.random(uint256(keccak256(abi.encodePacked(msg.sender, id, checks.minted))), 0, maxSeed)); // max is the highest uint32
-            check.colorBand = 10;
-            check.gradient = 1;// [0, 1, 2, 4, 8]; // TODO: Gradient steps;
-            check.speed = 8;
-            // TODO: Gradient Directionality
+            check.checksCount = 80;
+
+            // Randomized input
+            uint256 seedInput = randomizer + id;
+            uint256 gradientInput = uint8(Utils.random(seedInput + 1, 0, 100));
+            uint256 speedInput = uint8(Utils.random(seedInput + 2, 0, 100));
+            uint256 bandInput = uint8(Utils.random(seedInput + 3, 1, 160));
+
+            // Check settings
+            check.seed = uint32(Utils.random(seedInput, 0, 4294967295)); // max is the highest uint32
+
+            check.gradient = gradientInput < 80 ? 0
+                           : gradientInput < 90 ? 1
+                           : gradientInput < 96 ? 2
+                           : 3;
+
+            check.colorBand = bandInput > 80 ? 80
+                            : bandInput > 40 ? 40
+                            : bandInput > 20 ? 20
+                            : bandInput > 10 ? 10
+                            : bandInput > 5 ? 5
+                            : bandInput > 4 ? 4
+                            : 1;
+
+            check.speed = speedInput < 20 ? 4
+                        : speedInput < 80 ? 2
+                        : 1;
+
+            // TODO: Remove me (For testing...)
+            check.colorBand = 1;
+            check.gradient = 2;
+            check.speed = 1;
+
             _mint(msg.sender, id);
 
             unchecked { i++; }

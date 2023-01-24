@@ -5,6 +5,8 @@ import "./EightyColors.sol";
 import "./Utilities.sol";
 import "./IChecks.sol";
 
+import "hardhat/console.sol";
+
 struct CheckRenderData {
     IChecks.Check check;
     uint256[] colorIndexes;
@@ -39,14 +41,54 @@ library ChecksArt {
     {
         uint8[8] memory divisors = DIVISORS();
         uint256 checksCount = divisors[divisorIndex];
-        uint256 possibleColorChoices = divisorIndex > 0 ? divisors[divisorIndex - 1] * 2 : 80;
 
+        // If we're a composited check, we choose colors only based on
+        // the slots available in our parents. Otherwise,
+        // we choose based on our available spectrum.
+        uint256 possibleColorChoices = divisorIndex > 0
+            ? divisors[divisorIndex - 1] * 2
+            : 80;
+
+        console.log(possibleColorChoices);
+
+        // We initialize our index and select the first color
         uint256[] memory indexes = new uint256[](checksCount);
-        indexes[0] = Utils.random(check.seed, 0, possibleColorChoices - 1);
-        for (uint i = 0; i < checksCount; i++) {
-            indexes[i] = check.gradient > 0
-                ? (indexes[0] + i * check.gradient) % 80
-                : Utils.random(check.seed + i, 0, possibleColorChoices - 1);
+        indexes[0] = Utils.random(check.seed, 0, possibleColorChoices);
+
+        console.log('first color');
+        console.log(indexes[0]);
+        console.log('color band');
+        console.log(check.colorBand);
+        console.log('gradient');
+        console.log(check.gradient);
+        // console.log('1 * check.colorBand / check.gradient');
+        // console.log(1 * check.colorBand / check.gradient);
+
+        // Based on the color band, and whether it's a gradient check,
+        // we select all other colors.
+        for (uint i = 1; i < checksCount; i++) {
+            // indexes[i] = check.colorBand == 1 ? indexes[0]
+            //            : check.gradient > 0 ? (indexes[0] + i * check.gradient) % 80
+            //            : Utils.random(check.seed + i, 0, possibleColorChoices - 1);
+
+            indexes[i] = divisorIndex > 0
+                ? check.gradient > 0
+                    ? Utils.random(check.seed + i, 0, possibleColorChoices - 1) // TODO
+                    : Utils.random(check.seed + i, 0, possibleColorChoices - 1)
+                : check.gradient > 0
+                    ? (indexes[0] + i * check.colorBand / checksCount) % 80
+                    : (indexes[0] + Utils.random(check.seed + i, 1, check.colorBand)) % 80;
+
+                // : check.colorBand == 1
+                //     ? indexes[0]
+                //     : check.gradient > 0
+                //         ? (indexes[0] + i * check.colorBand / checksCount) % 80
+                //         : (indexes[0] + Utils.random(check.seed + i, 1, check.colorBand)) % 80;
+
+            // check.gradient > 0
+            // // ? (indexes[0] + i * check.gradient) % 80
+            // ? (indexes[0] + i * check.colorBand / check.gradient)
+            // : Utils.random(check.seed + i, 0, possibleColorChoices - 1);
         }
 
         if (divisorIndex > 0) {
@@ -137,7 +179,7 @@ library ChecksArt {
         // Add initial color as last one for smooth animations
         values = abi.encodePacked(values, '#', allColors[offset]);
 
-        return (Utils.uint2str(count / data.check.speed), string(values));
+        return (Utils.uint2str(count * 2 / data.check.speed), string(values));
     }
 
     function generateChecks(CheckRenderData memory data) public pure returns (string memory) {
