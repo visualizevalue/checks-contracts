@@ -5,7 +5,7 @@ interface IChecks {
 
     struct Check {
         uint32 seed;          // The seed is based the mint and enables pseudo-randomisation
-        uint16[7] composite; // The tokenIds that were composited into this one
+        uint16[6] composite; // The tokenIds that were composited into this one
         uint8 divisorIndex; // Easy access to next / previous divisor
         uint8 checksCount; // How many checks this token has
         uint8 colorBand;  // 100%, 50%, 25%, 12.5%, 6.25%, 5%, 1.25%

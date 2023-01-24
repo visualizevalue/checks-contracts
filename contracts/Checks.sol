@@ -58,11 +58,6 @@ contract Checks is IChecks, ERC721 {
             uint256 speedInput = uint8(Utils.random(seed + 2, 0, 100));
             uint256 bandInput = uint8(Utils.random(seed + 3, 1, 160));
 
-            console.log('gradientInput');
-            console.log(gradientInput);
-            console.log('bandInput');
-            console.log(bandInput);
-
             // Check settings
             check.seed = uint32(seed % 4294967296); // max is the highest uint32
 
@@ -70,10 +65,6 @@ contract Checks is IChecks, ERC721 {
                            : gradientInput < 96 ? 1
                            : [2, 5, 8, 9, 10]
                              [seed % 5];
-
-
-            console.log('check.gradient');
-            console.log(check.gradient);
 
             check.colorBand = bandInput > 80 ? 80
                             : bandInput > 40 ? 40
@@ -83,19 +74,9 @@ contract Checks is IChecks, ERC721 {
                             : bandInput > 2 ? 4
                             : 1;
 
-            console.log('check.colorBand');
-            console.log(check.colorBand);
-            console.log('id');
-            console.log(id);
-
             check.speed = speedInput < 20 ? 4
                         : speedInput < 80 ? 2
                         : 1;
-
-            // // TODO: Remove me (For testing...)
-            // check.colorBand = 1;
-            // check.gradient = 0;
-            // check.speed = 1;
 
             _mint(msg.sender, id);
 
@@ -104,13 +85,6 @@ contract Checks is IChecks, ERC721 {
 
         // Keep track of how many checks have been minted
         unchecked { checks.minted += count; }
-    }
-
-    function burn(uint256 tokenId) external virtual {
-        require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC721: caller is not token owner or approved");
-        _burn(tokenId);
-
-        unchecked { checks.minted--; }
     }
 
     function getCheck(uint256 tokenId) external view returns (Check memory) {
@@ -130,7 +104,7 @@ contract Checks is IChecks, ERC721 {
         require(pairs == burnIds.length, "Invalid number of tokens to composite");
 
         for (uint i = 0; i < pairs;) {
-            composite(tokenIds[i], burnIds[i]);
+            _composite(tokenIds[i], burnIds[i]);
 
             unchecked { i++; }
         }
@@ -162,6 +136,13 @@ contract Checks is IChecks, ERC721 {
 
         // Notify final composite.
         emit Infinity(id, tokenIds[1:]);
+    }
+
+    function burn(uint256 tokenId) external virtual {
+        require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC721: caller is not token owner or approved");
+        _burn(tokenId);
+
+        unchecked { checks.minted--; }
     }
 
     function colors(uint256 tokenId) external view returns (string[] memory, uint256[] memory)

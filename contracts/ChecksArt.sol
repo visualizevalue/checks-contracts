@@ -49,46 +49,16 @@ library ChecksArt {
             ? divisors[divisorIndex - 1] * 2
             : 80;
 
-        console.log(possibleColorChoices);
-
         // We initialize our index and select the first color
         uint256[] memory indexes = new uint256[](checksCount);
         indexes[0] = Utils.random(check.seed, 0, possibleColorChoices);
 
-        console.log('first color');
-        console.log(indexes[0]);
-        console.log('color band');
-        console.log(check.colorBand);
-        console.log('gradient');
-        console.log(check.gradient);
-        // console.log('1 * check.colorBand / check.gradient');
-        // console.log(1 * check.colorBand / check.gradient);
-
         // Based on the color band, and whether it's a gradient check,
         // we select all other colors.
         for (uint i = 1; i < checksCount; i++) {
-            // indexes[i] = check.colorBand == 1 ? indexes[0]
-            //            : check.gradient > 0 ? (indexes[0] + i * check.gradient) % 80
-            //            : Utils.random(check.seed + i, 0, possibleColorChoices - 1);
-
-            indexes[i] = divisorIndex > 0
-                ? check.gradient > 0
-                    ? Utils.random(check.seed + i, 0, possibleColorChoices - 1) // TODO
-                    : Utils.random(check.seed + i, 0, possibleColorChoices - 1)
-                : check.gradient > 0
-                    ? (indexes[0] + ((i * check.gradient) * check.colorBand / checksCount) % check.colorBand) % 80
-                    : (indexes[0] + Utils.random(check.seed + i, 0, check.colorBand)) % 80;
-
-                // : check.colorBand == 1
-                //     ? indexes[0]
-                //     : check.gradient > 0
-                //         ? (indexes[0] + i * check.colorBand / checksCount) % 80
-                //         : (indexes[0] + Utils.random(check.seed + i, 1, check.colorBand)) % 80;
-
-            // check.gradient > 0
-            // // ? (indexes[0] + i * check.gradient) % 80
-            // ? (indexes[0] + i * check.colorBand / check.gradient)
-            // : Utils.random(check.seed + i, 0, possibleColorChoices - 1);
+            indexes[i] = check.gradient > 0
+                ? (indexes[0] + ((i * check.gradient) * check.colorBand / checksCount) % check.colorBand) % 80
+                : (indexes[0] + Utils.random(check.seed + i, 0, check.colorBand)) % 80;
         }
 
         if (divisorIndex > 0) {

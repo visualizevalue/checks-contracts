@@ -4,7 +4,7 @@ import { impersonateAccounts } from './fixtures/impersonate'
 import { mintedFixture } from './fixtures/mint'
 import { composite } from '../helpers/composite'
 import { JALIL, VV, VV_TOKENS } from '../helpers/constants'
-import { render } from '../helpers/render'
+import { fetchAndRender, render } from '../helpers/render'
 const { expect } = require('chai')
 const hre = require('hardhat')
 const ethers = hre.ethers
@@ -75,8 +75,12 @@ describe('Checks', () => {
     it('Should allow to composite originals', async () => {
       const { checks, vv } = await loadFixture(mintedFixture)
 
+      expect(await checks.totalSupply()).to.equal(135)
+
       const [toKeep, toBurn] = VV_TOKENS.slice(0, 2)
       await checks.connect(vv).composite(toKeep, toBurn)
+
+      expect(await checks.totalSupply()).to.equal(134)
 
       const check = await checks.getCheck(toKeep)
 
@@ -88,31 +92,36 @@ describe('Checks', () => {
     it('Should allow to composite many originals at once', async () => {
       const { checks, vv } = await loadFixture(mintedFixture)
 
+      const totalSupply = await checks.totalSupply()
+      expect(totalSupply).to.equal(135)
+
       await composite(VV_TOKENS.slice(0, 64), checks, vv)
+
+      expect(await checks.totalSupply()).to.equal(totalSupply - 63) // One survives
     })
 
-    it.only('Should allow to composite and render many originals', async () => {
+    it.skip('Should allow to composite and render many originals', async () => {
       const { checks, vv } = await loadFixture(mintedFixture)
 
-      // const [singleId, singleDivisor] = await composite(VV_TOKENS.slice(0, 64), checks, vv, 0, false)
-      // await render(singleId, singleDivisor, checks)
+      const [singleId] = await composite(VV_TOKENS.slice(0, 64), checks, vv, 0, false)
+      await fetchAndRender(singleId, checks)
 
-      // const [fourId, fourDivisor] = await composite(VV_TOKENS.slice(64, 96), checks, vv, 0, false)
-      // await render(fourId, fourDivisor, checks)
+      const [fourId] = await composite(VV_TOKENS.slice(64, 96), checks, vv, 0, false)
+      await fetchAndRender(fourId, checks)
 
-      // const [fiveId, fiveDivisor] = await composite(VV_TOKENS.slice(96, 112), checks, vv, 0, false)
-      // await render(fiveId, fiveDivisor, checks)
+      const [fiveId] = await composite(VV_TOKENS.slice(96, 112), checks, vv, 0, false)
+      await fetchAndRender(fiveId, checks)
 
-      // const [tenId, tenDivisor] = await composite(VV_TOKENS.slice(112, 120), checks, vv, 0, false)
-      // await render(tenId, tenDivisor, checks)
+      const [tenId] = await composite(VV_TOKENS.slice(112, 120), checks, vv, 0, false)
+      await fetchAndRender(tenId, checks)
 
-      // const [twentyId, twentyDivisor] = await composite(VV_TOKENS.slice(120, 124), checks, vv, 0, false)
-      // await render(twentyId, twentyDivisor, checks)
+      const [twentyId] = await composite(VV_TOKENS.slice(120, 124), checks, vv, 0, false)
+      await fetchAndRender(twentyId, checks)
 
-      // const [fortyId, fortyDivisor] = await composite(VV_TOKENS.slice(124, 126), checks, vv, 0, false)
-      // await render(fortyId, fortyDivisor, checks)
+      const [fortyId] = await composite(VV_TOKENS.slice(124, 126), checks, vv, 0, false)
+      await fetchAndRender(fortyId, checks)
 
-      await render(VV_TOKENS[126], 80, checks)
+      await fetchAndRender(VV_TOKENS[126], checks)
     })
   })
 })
