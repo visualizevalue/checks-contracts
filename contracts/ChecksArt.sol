@@ -76,8 +76,8 @@ library ChecksArt {
                     ? Utils.random(check.seed + i, 0, possibleColorChoices - 1) // TODO
                     : Utils.random(check.seed + i, 0, possibleColorChoices - 1)
                 : check.gradient > 0
-                    ? (indexes[0] + i * check.colorBand / checksCount) % 80
-                    : (indexes[0] + Utils.random(check.seed + i, 1, check.colorBand)) % 80;
+                    ? (indexes[0] + ((i * check.gradient) * check.colorBand / checksCount) % check.colorBand) % 80
+                    : (indexes[0] + Utils.random(check.seed + i, 0, check.colorBand)) % 80;
 
                 // : check.colorBand == 1
                 //     ? indexes[0]

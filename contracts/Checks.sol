@@ -9,7 +9,7 @@ import "./ChecksArt.sol";
 import "./ChecksMetadata.sol";
 import "./Utilities.sol";
 
-// import "hardhat/console.sol";
+import "hardhat/console.sol";
 
 contract Checks is IChecks, ERC721 {
     IChecksEdition public editionChecks;
@@ -53,35 +53,49 @@ contract Checks is IChecks, ERC721 {
             check.checksCount = 80;
 
             // Randomized input
-            uint256 seedInput = randomizer + id;
-            uint256 gradientInput = uint8(Utils.random(seedInput + 1, 0, 100));
-            uint256 speedInput = uint8(Utils.random(seedInput + 2, 0, 100));
-            uint256 bandInput = uint8(Utils.random(seedInput + 3, 1, 160));
+            uint256 seed = randomizer + id;
+            uint256 gradientInput = uint8(Utils.random(seed + 1, 0, 100));
+            uint256 speedInput = uint8(Utils.random(seed + 2, 0, 100));
+            uint256 bandInput = uint8(Utils.random(seed + 3, 1, 160));
+
+            console.log('gradientInput');
+            console.log(gradientInput);
+            console.log('bandInput');
+            console.log(bandInput);
 
             // Check settings
-            check.seed = uint32(Utils.random(seedInput, 0, 4294967295)); // max is the highest uint32
+            check.seed = uint32(seed % 4294967296); // max is the highest uint32
 
             check.gradient = gradientInput < 80 ? 0
-                           : gradientInput < 90 ? 1
-                           : gradientInput < 96 ? 2
-                           : 3;
+                           : gradientInput < 96 ? 1
+                           : [2, 5, 8, 9, 10]
+                             [seed % 5];
+
+
+            console.log('check.gradient');
+            console.log(check.gradient);
 
             check.colorBand = bandInput > 80 ? 80
                             : bandInput > 40 ? 40
                             : bandInput > 20 ? 20
                             : bandInput > 10 ? 10
-                            : bandInput > 5 ? 5
-                            : bandInput > 4 ? 4
+                            : bandInput > 8 ? 5
+                            : bandInput > 2 ? 4
                             : 1;
+
+            console.log('check.colorBand');
+            console.log(check.colorBand);
+            console.log('id');
+            console.log(id);
 
             check.speed = speedInput < 20 ? 4
                         : speedInput < 80 ? 2
                         : 1;
 
-            // TODO: Remove me (For testing...)
-            check.colorBand = 1;
-            check.gradient = 2;
-            check.speed = 1;
+            // // TODO: Remove me (For testing...)
+            // check.colorBand = 1;
+            // check.gradient = 0;
+            // check.speed = 1;
 
             _mint(msg.sender, id);
 
@@ -158,6 +172,8 @@ contract Checks is IChecks, ERC721 {
 
     function svg(uint256 tokenId) external view returns (string memory) {
         _requireMinted(tokenId);
+
+        console.log(tokenId);
 
         return string(ChecksArt.generateSVG(checks.all[tokenId], checks));
     }
