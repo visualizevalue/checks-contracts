@@ -60,18 +60,18 @@ contract Checks is IChecks, ERC721 {
             // Check settings
             check.seed = uint32(seed % 4294967296); // max is the highest uint32
 
-            check.gradient = gradientInput < 80 ? 0
-                           : gradientInput < 96 ? 1
-                           : [2, 5, 8, 9, 10]
-                             [seed % 5];
+            check.gradient[0] = gradientInput < 80 ? 0
+                              : gradientInput < 96 ? 1
+                              : [2, 5, 8, 9, 10]
+                                [seed % 5];
 
-            check.colorBand = bandInput > 80 ? 80
-                            : bandInput > 40 ? 40
-                            : bandInput > 20 ? 20
-                            : bandInput > 10 ? 10
-                            : bandInput > 8 ? 5
-                            : bandInput > 2 ? 4
-                            : 1;
+            check.colorBand[0] = bandInput > 80 ? 80
+                               : bandInput > 40 ? 40
+                               : bandInput > 20 ? 20
+                               : bandInput > 10 ? 10
+                               : bandInput > 8 ? 5
+                               : bandInput > 2 ? 4
+                               : 1;
 
             check.speed = speedInput < 20 ? 4
                         : speedInput < 80 ? 2
@@ -181,6 +181,11 @@ contract Checks is IChecks, ERC721 {
         toKeep.divisorIndex += 1;
         // toKeep.checksCount = ChecksArt.DIVISORS()[toKeep.divisorIndex];
         // // TODO: gradient breeding
+
+        if (toKeep.divisorIndex < 6) {
+            toKeep.gradient[toKeep.divisorIndex] = toKeep.gradient[toKeep.divisorIndex - 1];
+            toKeep.colorBand[toKeep.divisorIndex] = toKeep.colorBand[toKeep.divisorIndex - 1];
+        }
 
         // Perform the burn
         _burn(burnId);

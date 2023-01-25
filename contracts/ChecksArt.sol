@@ -43,8 +43,6 @@ library ChecksArt {
         check.divisorIndex = stored.divisorIndex;
         check.checksCount = DIVISORS()[stored.divisorIndex];
         check.composite = stored.composite;
-
-        // TODO: Refactor
         check.colorBand = stored.colorBand;
         check.gradient = stored.gradient;
         check.speed = stored.speed;
@@ -73,10 +71,15 @@ library ChecksArt {
 
         // Based on the color band, and whether it's a gradient check,
         // we select all other colors.
-        for (uint i = 1; i < checksCount; i++) {
-            indexes[i] = check.gradient > 0
-                ? (indexes[0] + ((i * check.gradient) * check.colorBand / checksCount) % check.colorBand) % 80
-                : (indexes[0] + Utils.random(check.seed + i, 0, check.colorBand)) % 80;
+        if (divisorIndex < 6) {
+            uint8 gradient = check.gradient[divisorIndex];
+            uint8 colorBand = check.colorBand[divisorIndex];
+
+            for (uint i = 1; i < checksCount; i++) {
+                indexes[i] = gradient > 0 && gradient < 6
+                    ? (indexes[0] + ((i * gradient) * colorBand / checksCount) % colorBand) % 80
+                    : (indexes[0] + Utils.random(check.seed + i, 0, colorBand)) % 80;
+            }
         }
 
         if (divisorIndex > 0) {
@@ -89,7 +92,7 @@ library ChecksArt {
 
             // Replace random indices with parent / root color indices
             uint8 count = divisors[previousDivisor];
-            for (uint i = 0; i < divisors[divisorIndex]; i++) {
+            for (uint i = 0; i < checksCount; i++) {
                 uint256 branchIndex = indexes[i] % count;
                 indexes[i] = indexes[i] < count
                     ? parentIndexes[branchIndex]
@@ -266,6 +269,9 @@ library ChecksArt {
         uint256 tokenId, IChecks.Checks storage checks
     ) public view returns (bytes memory) {
         CheckRenderData memory data = collectRenderData(getCheck(tokenId, checks), checks);
+
+        console.log('generateSVG');
+        console.log(tokenId);
 
         return abi.encodePacked(
             '<svg ',

@@ -16,6 +16,8 @@ export const fetchAndRender = async (
 ) => {
   const check = await contract.getCheck(id)
 
+  console.log(check)
+
   fs.writeFileSync(
     `test/dist/${check.checksCount}_${id}_b${check.colorBand}_g${check.gradient}_s${check.speed}.svg`,
     await contract.svg(id)

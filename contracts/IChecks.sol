@@ -8,9 +8,12 @@ interface IChecks {
         uint16[6] composite; // The tokenIds that were composited into this one
         uint8 divisorIndex; // Easy access to next / previous divisor
 
+        uint8[6] colorBand;
+        uint8[6] gradient;
+
         // TODO: Refactor
-        uint8 colorBand;  // 100%, 50%, 25%, 12.5%, 6.25%, 5%, 1.25%
-        uint8 gradient;  // Linearly through the colorBand [1, 2, 3]
+        // uint8 colorBand;  // 100%, 50%, 25%, 12.5%, 6.25%, 5%, 1.25%
+        // uint8 gradient;  // Linearly through the colorBand [1, 2, 3]
         uint8 speed;    // Animation speed
     }
 
@@ -19,8 +22,8 @@ interface IChecks {
         uint16[6] composite; // The tokenIds that were composited into this one
         uint8 divisorIndex; // Easy access to next / previous divisor
         uint8 checksCount; // How many checks this token has
-        uint8 colorBand;  // 100%, 50%, 25%, 12.5%, 6.25%, 5%, 1.25%
-        uint8 gradient;  // Linearly through the colorBand [1, 2, 3]
+        uint8[6] colorBand;  // 100%, 50%, 25%, 12.5%, 6.25%, 5%, 1.25%
+        uint8[6] gradient;  // Linearly through the colorBand [1, 2, 3]
         uint8 speed;    // Animation speed
     }
 
