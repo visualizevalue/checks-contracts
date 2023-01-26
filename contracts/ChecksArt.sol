@@ -58,58 +58,20 @@ library ChecksArt {
         return [ 0, 1, 2, 5, 8, 9, 10 ];
     }
 
-    function _bandIndex(IChecks.StoredCheck memory check) internal pure returns(uint8) {
-        if (check.divisorIndex >= 6) return 0;
-
-        uint8 input = check.colorBands[check.divisorIndex];
-
-        return input > 80 ? 0
-             : input > 40 ? 1
-             : input > 20 ? 2
-             : input > 10 ? 3
-             : input >  8 ? 4
-             : input >  2 ? 5
-             : 6;
-    }
-
-    function _gradientIndex(IChecks.StoredCheck memory check) internal pure returns(uint8) {
-        if (check.divisorIndex >= 6) return 0;
-
-        uint8 input = check.gradients[check.divisorIndex];
-
-        return input <= 80 ? 0
-             : input <= 96 ? 1
-             : 2 + (input % 5);
-    }
-
     function getCheck(
         uint256 tokenId, IChecks.Checks storage checks
     ) public view returns (IChecks.Check memory check) {
         IChecks.StoredCheck memory stored = checks.all[tokenId];
+        uint8 divisorIndex = stored.divisorIndex;
+        // bool hasManyChecks = divisorIndex < 6;
         // console.log(tokenId);
 
         check.stored = stored;
-        // check.checksCount = DIVISORS()[stored.divisorIndex];
-        check.checksCount = DIVISORS()[stored.divisorIndex];
-        // check.checksCount = [ 80, 40, 20, 10, 5, 4, 1, 0 ][stored.divisorIndex];
-        // console.log(check.checksCount);
-        check.composite = stored.divisorIndex > 0 ? stored.composites[stored.divisorIndex - 1] : 0;
-        // console.log(check.composite);
-        // check.direction = 1; // TODO: implement direction
-        // console.log('_gradientIndex(stored)');
-        // console.log(_gradientIndex(stored));
-        // check.gradient = GRADIENTS()[_gradientIndex(stored)];
-        check.gradient = 2;
-        // check.gradient = [ 0, 1, 2, 5, 8, 9, 10 ][_gradientIndex(stored)];
-        // console.log('check.gradient');
-        // console.log(check.gradient);
-        // check.colorBand = COLOR_BANDS()[_bandIndex(stored)];
-        check.colorBand = 40;
-        // check.colorBand = [ 80, 40, 20, 10, 5, 4, 1 ][_bandIndex(stored)];
-        // console.log('check.colorBand');
-        // console.log(check.colorBand);
-        check.speed = 2;
-        // check.speed = stored.speed;
+        check.checksCount = DIVISORS()[divisorIndex];
+        check.composite = divisorIndex > 0 ? stored.composites[divisorIndex - 1] : 0;
+        check.gradient = divisorIndex < 6 ? stored.gradients[divisorIndex] : 0;
+        check.colorBand = divisorIndex < 6 ? stored.colorBands[divisorIndex] : 1;
+        check.speed = stored.speed;
 
         return check;
     }
@@ -120,9 +82,9 @@ library ChecksArt {
     )
         public view returns (uint256[] memory)
     {
-        console.log(divisorIndex);
         uint8[8] memory divisors = DIVISORS();
         uint256 checksCount = divisors[divisorIndex];
+        uint32 seed = check.stored.seed; // TODO: test
 
         // If we're a composited check, we choose colors only based on
         // the slots available in our parents. Otherwise,
@@ -133,7 +95,7 @@ library ChecksArt {
 
         // We initialize our index and select the first color
         uint256[] memory indexes = new uint256[](checksCount);
-        indexes[0] = Utils.random(check.stored.seed, 0, possibleColorChoices - 1);
+        indexes[0] = Utils.random(seed, 0, possibleColorChoices - 1);
 
         // Based on the color band, and whether it's a gradient check,
         // we select all other colors.
@@ -145,8 +107,8 @@ library ChecksArt {
                 indexes[i] = gradient > 0
                     ? (indexes[0] + (i * gradient * colorBand / checksCount) % colorBand) % 80
                     : divisorIndex == 0
-                        ? (indexes[0] + Utils.random(check.stored.seed + i, 0, colorBand)) % 80
-                        : Utils.random(check.stored.seed + i, 0, possibleColorChoices - 1);
+                        ? (indexes[0] + Utils.random(seed + i, 0, colorBand)) % 80
+                        : Utils.random(seed + i, 0, possibleColorChoices - 1);
             }
         }
 
@@ -164,12 +126,14 @@ library ChecksArt {
                 indexes[i] = indexes[i] < count
                     ? parentIndexes[branchIndex]
                     : compositedIndexes[branchIndex];
-
-                if (gradient > 0) {
+            }
+            if (gradient > 0) {
+                for (uint i = 1; i < checksCount; i++) {
                     indexes[i] = (indexes[0] + (i * gradient * colorBand / checksCount) % colorBand) % 80;
                 }
             }
         }
+        console.log(divisorIndex);
 
         return indexes;
     }

@@ -86,17 +86,18 @@ contract Checks is IChecks, ERC721 {
 
             // Check settings
 
-            check.colorBands[0] = uint8(Utils.random(seed + 1, 1, 160));
-            check.gradients[0] = uint8(Utils.random(seed + 2, 1, 100));
+            check.gradients[0] = _gradient(Utils.random(seed + 1, 1, 100));
+            check.colorBands[0] = _band(Utils.random(seed + 2, 1, 160));
             // check.speed = uint8(Utils.random(seed + 3, 1, 100));
+            check.speed = 2;
             check.seed = uint32(seed % 4294967296); // max is the highest uint32
 
-            // check.gradient[0] = gradientInput < 80 ? 0
+            // check.gradients[0] = gradientInput < 80 ? 0
             //                   : gradientInput < 96 ? 1
             //                   : [2, 5, 8, 9, 10]
             //                     [seed % 5];
 
-            // check.colorBand[0] = bandInput > 80 ? 80
+            // check.colorBands[0] = bandInput > 80 ? 80
             //                    : bandInput > 40 ? 40
             //                    : bandInput > 20 ? 20
             //                    : bandInput > 10 ? 10
@@ -115,6 +116,22 @@ contract Checks is IChecks, ERC721 {
 
         // Keep track of how many checks have been minted
         unchecked { checks.minted += count; }
+    }
+
+    function _gradient(uint256 input) internal pure returns(uint8) {
+        return input < 80 ? 0
+             : input < 96 ? 1
+             : [2, 5, 8, 9, 10][input % 5];
+    }
+
+    function _band(uint256 input) internal pure returns(uint8) {
+        return input > 80 ? 80
+             : input > 40 ? 40
+             : input > 20 ? 20
+             : input > 10 ? 10
+             : input >  8 ? 5
+             : input >  2 ? 4
+             : 1;
     }
 
     function getCheck(uint256 tokenId) public view returns (Check memory check) {
