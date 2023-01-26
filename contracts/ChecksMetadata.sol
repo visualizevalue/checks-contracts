@@ -40,8 +40,8 @@ library ChecksMetadata {
                     trait('Checks', Utils.uint2str(uint256(check.checksCount))),',',
                     // TODO: Refactor Check to have current data...
                     // TODO: Color Band should have human readable output in Percentages
-                    trait('Color Band', Utils.uint2str(uint256(check.colorBand[check.divisorIndex]))),',',
-                    trait('Gradient', Utils.uint2str(uint256(check.colorBand[check.divisorIndex]))),',',
+                    trait('Color Band', Utils.uint2str(uint256(check.colorBand))),',',
+                    trait('Gradient', Utils.uint2str(uint256(check.gradient))),',',
                     trait('Speed', check.speed == 4 ? '2x' : check.speed == 2 ? '1x' : '0.5x'),
                 ']',
             '}'

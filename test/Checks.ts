@@ -85,9 +85,9 @@ describe('Checks', () => {
 
       const check = await checks.getCheck(toKeep)
 
-      expect(check.composite[0]).to.equal(toBurn)
+      expect(check.composite).to.equal(toBurn)
       expect(check.checksCount).to.equal(40)
-      expect(check.divisorIndex).to.equal(1)
+      expect(check.stored.divisorIndex).to.equal(1)
     })
 
     it('Should allow to composite many originals at once', async () => {
@@ -127,7 +127,7 @@ describe('Checks', () => {
   })
 
   describe('Metadata', () => {
-    it.only('Should show correct metadata', async () => {
+    it('Should show correct metadata', async () => {
       const { checks } = await loadFixture(mintedFixture)
 
       const uri = await checks.tokenURI(VV_TOKENS[0])

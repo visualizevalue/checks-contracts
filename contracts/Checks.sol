@@ -11,21 +11,36 @@ import "./Utilities.sol";
 
 import "hardhat/console.sol";
 
-//
-//            ______   _____
-//         __/      \ /     \
-//        /                  |__
-//      /|               __     `\
-//      \ \             / /       |
-//       \ /      __   / /       /
-//       /|       \ \_/ /         \
-//       \ \       \___/           |
-//        \ \ __                  /
-//         \____|`\          ____/
-//               \ \________/___/
-//                \________/
-//
-contract Checks is IChecks, ERC721 { ... }
+
+//✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
+//✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
+//✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
+//✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
+//✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓            ✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
+//✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓                  ✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
+//✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓        ✓                ✓        ✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
+//✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓                                        ✓✓✓✓✓✓✓✓✓✓✓✓✓✓
+//✓✓✓✓✓✓✓✓✓✓✓✓✓✓                                          ✓✓✓✓✓✓✓✓✓✓✓✓✓
+//✓✓✓✓✓✓✓✓✓✓✓✓✓✓                                          ✓✓✓✓✓✓✓✓✓✓✓✓✓
+//✓✓✓✓✓✓✓✓✓✓✓✓✓✓                            ✓✓✓           ✓✓✓✓✓✓✓✓✓✓✓✓✓
+//✓✓✓✓✓✓✓✓✓✓✓    ✓                        ✓✓✓✓✓         ✓    ✓✓✓✓✓✓✓✓✓✓
+//✓✓✓✓✓✓✓✓✓✓                            ✓✓✓✓✓                 ✓✓✓✓✓✓✓✓✓
+//✓✓✓✓✓✓✓✓✓                           ✓✓✓✓✓                    ✓✓✓✓✓✓✓✓
+//✓✓✓✓✓✓✓✓✓               ✓✓✓       ✓✓✓✓✓                      ✓✓✓✓✓✓✓✓
+//✓✓✓✓✓✓✓✓✓               ✓✓✓✓✓   ✓✓✓✓✓                       ✓✓✓✓✓✓✓✓✓
+//✓✓✓✓✓✓✓✓✓✓                ✓✓✓✓✓✓✓✓✓                        ✓✓✓✓✓✓✓✓✓✓
+//✓✓✓✓✓✓✓✓✓✓✓✓ ✓              ✓✓✓✓✓                      ✓ ✓✓✓✓✓✓✓✓✓✓✓✓
+//✓✓✓✓✓✓✓✓✓✓✓✓✓✓                                          ✓✓✓✓✓✓✓✓✓✓✓✓✓
+//✓✓✓✓✓✓✓✓✓✓✓✓✓✓                                          ✓✓✓✓✓✓✓✓✓✓✓✓✓
+//✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓                                        ✓✓✓✓✓✓✓✓✓✓✓✓✓✓
+//✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓                                     ✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
+//✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓      ✓                ✓      ✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
+//✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓                 ✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
+//✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓           ✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
+//✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
+//✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
+//✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
+contract Checks is IChecks, ERC721 {
     IChecksEdition public editionChecks;
 
     // Our DB
@@ -65,29 +80,33 @@ contract Checks is IChecks, ERC721 { ... }
 
             // Randomized input
             uint256 seed = randomizer + id;
-            uint256 gradientInput = uint8(Utils.random(seed + 1, 0, 100));
-            uint256 speedInput = uint8(Utils.random(seed + 2, 0, 100));
-            uint256 bandInput = uint8(Utils.random(seed + 3, 1, 160));
+            // uint256 gradientInput = uint8(Utils.random(seed + 1, 0, 100));
+            // uint256 speedInput = uint8(Utils.random(seed + 2, 0, 100));
+            // uint256 bandInput = uint8(Utils.random(seed + 3, 1, 160));
 
             // Check settings
+
+            check.colorBands[0] = uint8(Utils.random(seed + 1, 1, 160));
+            check.gradients[0] = uint8(Utils.random(seed + 2, 0, 100));
+            check.speed = uint8(Utils.random(seed + 3, 0, 100));
             check.seed = uint32(seed % 4294967296); // max is the highest uint32
 
-            check.gradient[0] = gradientInput < 80 ? 0
-                              : gradientInput < 96 ? 1
-                              : [2, 5, 8, 9, 10]
-                                [seed % 5];
+            // check.gradient[0] = gradientInput < 80 ? 0
+            //                   : gradientInput < 96 ? 1
+            //                   : [2, 5, 8, 9, 10]
+            //                     [seed % 5];
 
-            check.colorBand[0] = bandInput > 80 ? 80
-                               : bandInput > 40 ? 40
-                               : bandInput > 20 ? 20
-                               : bandInput > 10 ? 10
-                               : bandInput > 8 ? 5
-                               : bandInput > 2 ? 4
-                               : 1;
+            // check.colorBand[0] = bandInput > 80 ? 80
+            //                    : bandInput > 40 ? 40
+            //                    : bandInput > 20 ? 20
+            //                    : bandInput > 10 ? 10
+            //                    : bandInput > 8 ? 5
+            //                    : bandInput > 2 ? 4
+            //                    : 1;
 
-            check.speed = speedInput < 20 ? 4
-                        : speedInput < 80 ? 2
-                        : 1;
+            // check.speed = speedInput < 20 ? 4
+            //             : speedInput < 80 ? 2
+            //             : 1;
 
             _mint(msg.sender, id);
 
@@ -229,8 +248,8 @@ contract Checks is IChecks, ERC721 { ... }
         ) = _tokenOperation(tokenId, burnId);
 
         toKeep.seed = toBurn.seed;
-        toKeep.gradient[divisorIndex] = toBurn.gradient[divisorIndex];
-        toKeep.colorBand[divisorIndex] = toBurn.colorBand[divisorIndex];
+        toKeep.gradients[divisorIndex] = toBurn.gradients[divisorIndex];
+        toKeep.colorBands[divisorIndex] = toBurn.colorBands[divisorIndex];
 
         // Perform the burn
         _burn(burnId);
@@ -239,6 +258,42 @@ contract Checks is IChecks, ERC721 { ... }
         emit IChecks.Sacrifice(burnId, tokenId);
     }
 
+    function _composite(uint256 tokenId, uint256 burnId) internal {
+        (
+            StoredCheck storage toKeep,
+            StoredCheck storage toBurn,
+        ) = _tokenOperation(tokenId, burnId);
+
+        // Composite our check
+        uint8 divisorIndex = toKeep.divisorIndex;
+        toKeep.composites[divisorIndex] = uint16(burnId);
+        toKeep.divisorIndex += 1;
+
+        if (toKeep.divisorIndex < 6) {
+            // Need a randomizer for gene manipulation
+            uint256 randomizer = Utils.seed(checks.burned);
+
+            // We take the smallest gradient, or continue as random checks
+            toKeep.gradients[toKeep.divisorIndex] = Utils.random(randomizer, 1, 100) > 80
+                ? _min(toKeep.gradients[divisorIndex], toBurn.gradients[divisorIndex])
+                : _minGt0(toKeep.gradients[divisorIndex], toBurn.gradients[divisorIndex]);
+
+            // We always take the smaller color band when breeding
+            // TODO: refactor to band averages
+            toKeep.colorBands[toKeep.divisorIndex] = _min(
+                toKeep.colorBands[divisorIndex],
+                toBurn.colorBands[divisorIndex]
+            );
+        }
+
+        // Perform the burn
+        _burn(burnId);
+
+        // Notify composite
+        emit IChecks.Composite(tokenId, burnId, ChecksArt.DIVISORS()[toKeep.divisorIndex]);
+    }
+
+    // TODO: Move to utilities
     function _minGt0(uint8 one, uint8 two) internal pure returns (uint8) {
         return one > two
             ? two > 0
@@ -253,40 +308,5 @@ contract Checks is IChecks, ERC721 { ... }
 
     function _avg(uint8 one, uint8 two) internal pure returns (uint8) {
         return (one & two) + (one ^ two) / 2;
-    }
-
-    function _composite(uint256 tokenId, uint256 burnId) internal {
-        (
-            StoredCheck storage toKeep,
-            StoredCheck storage toBurn,
-        ) = _tokenOperation(tokenId, burnId);
-
-        // Composite our check
-        uint8 divisorIndex = toKeep.divisorIndex;
-        toKeep.composite[divisorIndex] = uint16(burnId);
-        toKeep.divisorIndex += 1;
-
-        if (toKeep.divisorIndex < 6) {
-            // Need a randomizer for gene manipulation
-            uint256 randomizer = Utils.seed(checks.burned);
-
-            // We take the smallest gradient, or continue as random checks
-            toKeep.gradient[toKeep.divisorIndex] = Utils.random(randomizer, 1, 100) > 80
-                ? _min(toKeep.gradient[divisorIndex], toBurn.gradient[divisorIndex])
-                : _minGt0(toKeep.gradient[divisorIndex], toBurn.gradient[divisorIndex]);
-
-            // We always take the smaller color band when breeding
-            // TODO: refactor to band averages
-            toKeep.colorBand[toKeep.divisorIndex] = _min(
-                toKeep.colorBand[divisorIndex],
-                toBurn.colorBand[divisorIndex]
-            );
-        }
-
-        // Perform the burn
-        _burn(burnId);
-
-        // Notify composite
-        emit IChecks.Composite(tokenId, burnId, ChecksArt.DIVISORS()[toKeep.divisorIndex]);
     }
 }

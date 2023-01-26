@@ -27,6 +27,22 @@ struct CheckRenderData {
     bool isNewRow;
 }
 
+/////////   VV CHECKS   /////////
+//                             //
+//                             //
+//       ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓       //
+//       ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓       //
+//       ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓       //
+//       ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓       //
+//       ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓       //
+//       ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓       //
+//       ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓       //
+//       ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓       //
+//       ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓       //
+//       ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓       //
+//                             //
+//                             //
+/////  VERIFY, DON'T TRUST   ////
 library ChecksArt {
     string public constant CHECKS_PATH = 'M21.36 9.886A3.933 3.933 0 0 0 18 8c-1.423 0-2.67.755-3.36 1.887a3.935 3.935 0 0 0-4.753 4.753A3.933 3.933 0 0 0 8 18c0 1.423.755 2.669 1.886 3.36a3.935 3.935 0 0 0 4.753 4.753 3.933 3.933 0 0 0 4.863 1.59 3.953 3.953 0 0 0 1.858-1.589 3.935 3.935 0 0 0 4.753-4.754A3.933 3.933 0 0 0 28 18a3.933 3.933 0 0 0-1.887-3.36 3.934 3.934 0 0 0-1.042-3.711 3.934 3.934 0 0 0-3.71-1.043Zm-3.958 11.713 4.562-6.844c.566-.846-.751-1.724-1.316-.878l-4.026 6.043-1.371-1.368c-.717-.722-1.836.396-1.116 1.116l2.17 2.15a.788.788 0 0 0 1.097-.22Z';
 
@@ -39,12 +55,12 @@ library ChecksArt {
     ) public view returns (IChecks.Check memory check) {
         IChecks.StoredCheck memory stored = checks.all[tokenId];
 
-        check.seed = stored.seed;
-        check.divisorIndex = stored.divisorIndex;
+        check.stored = stored;
         check.checksCount = DIVISORS()[stored.divisorIndex];
-        check.composite = stored.composite;
-        check.colorBand = stored.colorBand;
-        check.gradient = stored.gradient;
+        check.composite = stored.divisorIndex > 0 ? stored.composites[stored.divisorIndex - 1] : 0;
+        check.direction = 1; // TODO: implement direction
+        check.colorBand = stored.divisorIndex < 6 ? stored.colorBands[stored.divisorIndex] : 1;
+        check.gradient = stored.divisorIndex < 6 ? stored.gradients[stored.divisorIndex] : 0;
         check.speed = stored.speed;
 
         return check;
@@ -68,20 +84,20 @@ library ChecksArt {
 
         // We initialize our index and select the first color
         uint256[] memory indexes = new uint256[](checksCount);
-        indexes[0] = Utils.random(check.seed, 0, possibleColorChoices - 1);
+        indexes[0] = Utils.random(check.stored.seed, 0, possibleColorChoices - 1);
 
         // Based on the color band, and whether it's a gradient check,
         // we select all other colors.
-        uint8 gradient = divisorIndex < 6 ? check.gradient[divisorIndex] : 0;
-        uint8 colorBand = divisorIndex < 6 ? check.colorBand[divisorIndex] : 1;
+        uint8 gradient = check.gradient;
+        uint8 colorBand = check.colorBand;
 
         if (divisorIndex < 6) {
             for (uint i = 1; i < checksCount; i++) {
                 indexes[i] = gradient > 0
                     ? (indexes[0] + (i * gradient * colorBand / checksCount) % colorBand) % 80
                     : divisorIndex == 0
-                        ? (indexes[0] + Utils.random(check.seed + i, 0, colorBand)) % 80
-                        : Utils.random(check.seed + i, 0, possibleColorChoices - 1);
+                        ? (indexes[0] + Utils.random(check.stored.seed + i, 0, colorBand)) % 80
+                        : Utils.random(check.stored.seed + i, 0, possibleColorChoices - 1);
             }
         }
 
@@ -90,7 +106,7 @@ library ChecksArt {
 
             uint256[] memory parentIndexes = colorIndexes(previousDivisor, check, checks);
 
-            IChecks.Check memory composited = getCheck(check.composite[previousDivisor], checks);
+            IChecks.Check memory composited = getCheck(check.composite, checks);
             uint256[] memory compositedIndexes = colorIndexes(previousDivisor, composited, checks);
 
             // Replace random indices with parent / root color indices
@@ -114,14 +130,14 @@ library ChecksArt {
         IChecks.Check memory check, IChecks.Checks storage checks
     ) public view returns (string[] memory, uint256[] memory) {
         // A fully composited check has no color.
-        if (check.divisorIndex == 7) {
+        if (check.stored.divisorIndex == 7) {
             string[] memory zeroColors;
             zeroColors[0] = '#FFF';
             return (zeroColors, new uint256[](999));
         }
 
         // Fetch the indices on the original color mapping.
-        uint256[] memory indexes = colorIndexes(check.divisorIndex, check, checks);
+        uint256[] memory indexes = colorIndexes(check.stored.divisorIndex, check, checks);
 
         // Map over to get the colors.
         string[] memory checkColors = new string[](indexes.length);
@@ -231,7 +247,7 @@ library ChecksArt {
     ) public view returns (CheckRenderData memory data) {
         // Carry over the check
         data.check = check;
-        data.count = DIVISORS()[check.divisorIndex];
+        data.count = DIVISORS()[check.stored.divisorIndex];
 
         // Colors
         (string[] memory colors_, uint256[] memory colorIndexes_) = colors(check, checks);
