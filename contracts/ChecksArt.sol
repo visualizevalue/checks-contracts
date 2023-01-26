@@ -82,9 +82,6 @@ library ChecksArt {
                     : divisorIndex == 0
                         ? (indexes[0] + Utils.random(check.seed + i, 0, colorBand)) % 80
                         : Utils.random(check.seed + i, 0, possibleColorChoices - 1);
-
-
-                console.log(indexes[i]);
             }
         }
 
@@ -279,9 +276,6 @@ library ChecksArt {
         uint256 tokenId, IChecks.Checks storage checks
     ) public view returns (bytes memory) {
         CheckRenderData memory data = collectRenderData(getCheck(tokenId, checks), checks);
-
-        console.log('generateSVG');
-        console.log(tokenId);
 
         return abi.encodePacked(
             '<svg ',

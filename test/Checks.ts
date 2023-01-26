@@ -1,3 +1,4 @@
+import fs from 'fs'
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers'
 import { deployChecks } from './fixtures/deploy'
 import { impersonateAccounts } from './fixtures/impersonate'
@@ -122,6 +123,18 @@ describe('Checks', () => {
       await fetchAndRender(fortyId, checks)
 
       await fetchAndRender(VV_TOKENS[126], checks)
+    })
+  })
+
+  describe('Metadata', () => {
+    it.only('Should show correct metadata', async () => {
+      const { checks } = await loadFixture(mintedFixture)
+
+      const uri = await checks.tokenURI(VV_TOKENS[0])
+      fs.writeFileSync(`test/dist/tokenuri-${VV_TOKENS[0]}`, uri)
+
+      const uri2 = await checks.tokenURI(VV_TOKENS[1])
+      fs.writeFileSync(`test/dist/tokenuri-${VV_TOKENS[1]}`, uri2)
     })
   })
 })

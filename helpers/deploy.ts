@@ -18,6 +18,7 @@ export const deployChecksWithLibraries = async (ethers) => {
 
   const ChecksMetadata = await ethers.getContractFactory('ChecksMetadata', {
     libraries: {
+      Utils: utils.address,
       ChecksArt: checksArt.address,
     }
   })
