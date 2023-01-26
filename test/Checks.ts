@@ -101,7 +101,7 @@ describe('Checks', () => {
       expect(await checks.totalSupply()).to.equal(totalSupply - 63) // One survives
     })
 
-    it('Should allow to composite and render many originals', async () => {
+    it.only('Should allow to composite and render many originals', async () => {
       const { checks, vv } = await loadFixture(mintedFixture)
 
       const [singleId] = await composite(VV_TOKENS.slice(0, 64), checks, vv, 0, false)
@@ -127,14 +127,17 @@ describe('Checks', () => {
   })
 
   describe('Metadata', () => {
-    it('Should show correct metadata', async () => {
-      const { checks } = await loadFixture(mintedFixture)
+    it.only('Should show correct metadata', async () => {
+      const { checks, vv } = await loadFixture(mintedFixture)
 
       const uri = await checks.tokenURI(VV_TOKENS[0])
       fs.writeFileSync(`test/dist/tokenuri-${VV_TOKENS[0]}`, uri)
 
       const uri2 = await checks.tokenURI(VV_TOKENS[1])
       fs.writeFileSync(`test/dist/tokenuri-${VV_TOKENS[1]}`, uri2)
+
+      const [singleId] = await composite(VV_TOKENS.slice(2, 66), checks, vv, 0, false)
+      await fetchAndRender(singleId, checks)
     })
   })
 })
