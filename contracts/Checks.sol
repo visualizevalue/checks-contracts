@@ -78,37 +78,16 @@ contract Checks is IChecks, ERC721 {
             StoredCheck storage check = checks.all[id];
             check.divisorIndex = 0;
 
-            // Randomized input
-            uint256 seed = randomizer + id;
-            // uint256 gradientInput = uint8(Utils.random(seed + 1, 0, 100));
-            // uint256 speedInput = uint8(Utils.random(seed + 2, 0, 100));
-            // uint256 bandInput = uint8(Utils.random(seed + 3, 1, 160));
+            // Randomized input with a uint32 as max value
+            uint256 seed = (randomizer + id) % 4294967296;
 
             // Check settings
+            check.colorBands[0] = _band(Utils.random(seed + 2, 160));
+            check.gradients[0]  = _gradient(Utils.random(seed + 1, 100));
+            check.speed = uint8(Utils.random(seed + 3, 100));
+            check.seed = uint32(seed);
 
-            check.gradients[0] = _gradient(Utils.random(seed + 1, 1, 100));
-            check.colorBands[0] = _band(Utils.random(seed + 2, 1, 160));
-            // check.speed = uint8(Utils.random(seed + 3, 1, 100));
-            check.speed = 2;
-            check.seed = uint32(seed % 4294967296); // max is the highest uint32
-
-            // check.gradients[0] = gradientInput < 80 ? 0
-            //                   : gradientInput < 96 ? 1
-            //                   : [2, 5, 8, 9, 10]
-            //                     [seed % 5];
-
-            // check.colorBands[0] = bandInput > 80 ? 80
-            //                    : bandInput > 40 ? 40
-            //                    : bandInput > 20 ? 20
-            //                    : bandInput > 10 ? 10
-            //                    : bandInput > 8 ? 5
-            //                    : bandInput > 2 ? 4
-            //                    : 1;
-
-            // check.speed = speedInput < 20 ? 4
-            //             : speedInput < 80 ? 2
-            //             : 1;
-
+            // Mint the original
             _mint(msg.sender, id);
 
             unchecked { i++; }

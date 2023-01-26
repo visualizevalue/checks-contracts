@@ -95,7 +95,7 @@ library ChecksArt {
 
         // We initialize our index and select the first color
         uint256[] memory indexes = new uint256[](checksCount);
-        indexes[0] = Utils.random(seed, 0, possibleColorChoices - 1);
+        indexes[0] = Utils.random(seed, possibleColorChoices - 1);
 
         // Based on the color band, and whether it's a gradient check,
         // we select all other colors.
@@ -107,8 +107,8 @@ library ChecksArt {
                 indexes[i] = gradient > 0
                     ? (indexes[0] + (i * gradient * colorBand / checksCount) % colorBand) % 80
                     : divisorIndex == 0
-                        ? (indexes[0] + Utils.random(seed + i, 0, colorBand)) % 80
-                        : Utils.random(seed + i, 0, possibleColorChoices - 1);
+                        ? (indexes[0] + Utils.random(seed + i, colorBand)) % 80
+                        : Utils.random(seed + i, possibleColorChoices - 1);
             }
         }
 
@@ -133,7 +133,6 @@ library ChecksArt {
                 }
             }
         }
-        console.log(divisorIndex);
 
         return indexes;
     }

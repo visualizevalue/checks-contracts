@@ -9,6 +9,11 @@ library Utils {
         );
     }
 
+    /// @dev Pseudorandom number based on input max bound
+    function random(uint256 input, uint256 max) public pure returns (uint256) {
+        return max - (uint256(keccak256(abi.encodePacked(input))) % max);
+    }
+
     /// @dev Pseudorandom number based on input within bounds
     function random(uint256 input, uint256 min, uint256 max) public pure returns (uint256) {
         uint256 randRange = max - min;
