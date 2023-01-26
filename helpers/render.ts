@@ -15,11 +15,10 @@ export const fetchAndRender = async (
   contract: Contract,
 ) => {
   const check = await contract.getCheck(id)
-
-  console.log(check)
+  const i = check.divisorIndex
 
   fs.writeFileSync(
-    `test/dist/${check.checksCount}_${id}_b${check.colorBand}_g${check.gradient}_s${check.speed}.svg`,
+    `test/dist/${check.checksCount}_${id}_b${check.colorBand[i]}_g${check.gradient[i]}_s${check.speed}.svg`,
     await contract.svg(id)
   )
   console.log(`Saved #${id} with ${check.checksCount} checks`)

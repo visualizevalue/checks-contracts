@@ -11,6 +11,7 @@ import "./tasks/accounts"
 import "./tasks/deploy"
 import "./tasks/mint"
 import "./tasks/render"
+import "./tasks/composite"
 
 dotenv.config()
 

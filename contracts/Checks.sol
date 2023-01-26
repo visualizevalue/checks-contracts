@@ -36,9 +36,7 @@ contract Checks is IChecks, ERC721 {
         }
 
         // We need a base seed for pseudo-randomization
-        uint256 randomizer = uint256(
-            keccak256(abi.encodePacked(msg.sender, block.coinbase, checks.minted))
-        );
+        uint256 randomizer = Utils.seed(checks.minted);
 
         // Burn the Editions for the given tokenIds & mint the Originals.
         for (uint i = 0; i < count;) {
@@ -92,6 +90,24 @@ contract Checks is IChecks, ERC721 {
         return ChecksArt.getCheck(tokenId, checks);
     }
 
+    function inItForTheArt(uint256 tokenId, uint256 burnId) public {
+        _sacrifice(tokenId, burnId);
+
+        unchecked { checks.burned ++; }
+    }
+
+    function inItForTheArts(uint256[] calldata tokenIds, uint256[] calldata burnIds) public {
+        uint256 pairs =_multiTokenOperation(tokenIds, burnIds);
+
+        for (uint i = 0; i < pairs;) {
+            _sacrifice(tokenIds[i], burnIds[i]);
+
+            unchecked { i++; }
+        }
+
+        unchecked { checks.burned += uint32(pairs); }
+    }
+
     function composite(uint256 tokenId, uint256 burnId) public {
         _composite(tokenId, burnId);
 
@@ -99,8 +115,7 @@ contract Checks is IChecks, ERC721 {
     }
 
     function compositeMany(uint256[] calldata tokenIds, uint256[] calldata burnIds) public {
-        uint256 pairs = tokenIds.length;
-        require(pairs == burnIds.length, "Invalid number of tokens to composite");
+        uint256 pairs =_multiTokenOperation(tokenIds, burnIds);
 
         for (uint i = 0; i < pairs;) {
             _composite(tokenIds[i], burnIds[i]);
@@ -164,27 +179,94 @@ contract Checks is IChecks, ERC721 {
         return checks.minted - checks.burned;
     }
 
-    function _composite(uint256 tokenId, uint256 burnId) internal {
-        require(tokenId != burnId, "Can't composit the same token");
+    function _multiTokenOperation(uint256[] calldata tokenIds, uint256[] calldata burnIds)
+        internal pure returns (uint256 pairs)
+    {
+        pairs = tokenIds.length;
+        require(pairs == burnIds.length, "Invalid number of tokens to composite");
+    }
+
+    function _tokenOperation(uint256 tokenId, uint256 burnId)
+        internal view returns (
+            StoredCheck storage toKeep,
+            StoredCheck storage toBurn,
+            uint8 divisorIndex
+        )
+    {
+        require(tokenId != burnId, "Same token operation");
         require(
             _isApprovedOrOwner(msg.sender, tokenId) && _isApprovedOrOwner(msg.sender, burnId),
             "Not the owner or approved"
         );
 
-        StoredCheck storage toKeep = checks.all[tokenId];
-        StoredCheck storage toBurn = checks.all[tokenId];
-        require(toKeep.divisorIndex == toBurn.divisorIndex, "Can only composite from same type");
-        require(toKeep.divisorIndex < 6, "Can't composite single checks");
+        toKeep = checks.all[tokenId];
+        toBurn = checks.all[burnId];
+        divisorIndex = toKeep.divisorIndex;
+
+        require(divisorIndex == toBurn.divisorIndex, "Different checks count");
+        require(divisorIndex < 6, "Operation on single checks");
+    }
+
+    function _sacrifice(uint256 tokenId, uint256 burnId) internal {
+        (
+            StoredCheck storage toKeep,
+            StoredCheck storage toBurn,
+            uint8 divisorIndex
+        ) = _tokenOperation(tokenId, burnId);
+
+        toKeep.seed = toBurn.seed;
+        toKeep.gradient[divisorIndex] = toBurn.gradient[divisorIndex];
+        toKeep.colorBand[divisorIndex] = toBurn.colorBand[divisorIndex];
+
+        // Perform the burn
+        _burn(burnId);
+
+        // Notify replace
+        emit IChecks.Sacrifice(burnId, tokenId);
+    }
+
+    function _minGt0(uint8 one, uint8 two) internal pure returns (uint8) {
+        return one > two
+            ? two > 0
+                ? two
+                : one
+            : two;
+    }
+
+    function _min(uint8 one, uint8 two) internal pure returns (uint8) {
+        return one < two ? one : two;
+    }
+
+    function _avg(uint8 one, uint8 two) internal pure returns (uint8) {
+        return (one & two) + (one ^ two) / 2;
+    }
+
+    function _composite(uint256 tokenId, uint256 burnId) internal {
+        (
+            StoredCheck storage toKeep,
+            StoredCheck storage toBurn,
+        ) = _tokenOperation(tokenId, burnId);
 
         // Composite our check
-        toKeep.composite[toKeep.divisorIndex] = uint16(burnId);
+        uint8 divisorIndex = toKeep.divisorIndex;
+        toKeep.composite[divisorIndex] = uint16(burnId);
         toKeep.divisorIndex += 1;
-        // toKeep.checksCount = ChecksArt.DIVISORS()[toKeep.divisorIndex];
-        // // TODO: gradient breeding
 
         if (toKeep.divisorIndex < 6) {
-            toKeep.gradient[toKeep.divisorIndex] = toKeep.gradient[toKeep.divisorIndex - 1];
-            toKeep.colorBand[toKeep.divisorIndex] = toKeep.colorBand[toKeep.divisorIndex - 1];
+            // Need a randomizer for gene manipulation
+            uint256 randomizer = Utils.seed(checks.burned);
+
+            // We take the smallest gradient, or continue as random checks
+            toKeep.gradient[toKeep.divisorIndex] = Utils.random(randomizer, 1, 100) > 80
+                ? _min(toKeep.gradient[divisorIndex], toBurn.gradient[divisorIndex])
+                : _minGt0(toKeep.gradient[divisorIndex], toBurn.gradient[divisorIndex]);
+
+            // We always take the smaller color band when breeding
+            // TODO: refactor to band averages
+            toKeep.colorBand[toKeep.divisorIndex] = _min(
+                toKeep.colorBand[divisorIndex],
+                toBurn.colorBand[divisorIndex]
+            );
         }
 
         // Perform the burn

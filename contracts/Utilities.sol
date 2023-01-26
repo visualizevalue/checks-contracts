@@ -2,6 +2,13 @@
 pragma solidity ^0.8.17;
 
 library Utils {
+    /// @dev Create a pseudo random number
+    function seed(uint256 nonce) public view returns (uint256) {
+        return uint256(
+            keccak256(abi.encodePacked(msg.sender, block.coinbase, nonce))
+        );
+    }
+
     /// @dev Pseudorandom number based on input within bounds
     function random(uint256 input, uint256 min, uint256 max) public pure returns (uint256) {
         uint256 randRange = max - min;

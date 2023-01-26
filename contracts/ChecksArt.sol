@@ -53,7 +53,8 @@ library ChecksArt {
     /// @dev Generate indexes for the color slots of its parent (root being the COLORS themselves).
     function colorIndexes(
         uint8 divisorIndex, IChecks.Check memory check, IChecks.Checks storage checks
-    ) public view returns (uint256[] memory)
+    )
+        public view returns (uint256[] memory)
     {
         uint8[8] memory divisors = DIVISORS();
         uint256 checksCount = divisors[divisorIndex];
@@ -67,18 +68,23 @@ library ChecksArt {
 
         // We initialize our index and select the first color
         uint256[] memory indexes = new uint256[](checksCount);
-        indexes[0] = Utils.random(check.seed, 0, possibleColorChoices);
+        indexes[0] = Utils.random(check.seed, 0, possibleColorChoices - 1);
 
         // Based on the color band, and whether it's a gradient check,
         // we select all other colors.
-        if (divisorIndex < 6) {
-            uint8 gradient = check.gradient[divisorIndex];
-            uint8 colorBand = check.colorBand[divisorIndex];
+        uint8 gradient = divisorIndex < 6 ? check.gradient[divisorIndex] : 0;
+        uint8 colorBand = divisorIndex < 6 ? check.colorBand[divisorIndex] : 1;
 
+        if (divisorIndex < 6) {
             for (uint i = 1; i < checksCount; i++) {
-                indexes[i] = gradient > 0 && gradient < 6
-                    ? (indexes[0] + ((i * gradient) * colorBand / checksCount) % colorBand) % 80
-                    : (indexes[0] + Utils.random(check.seed + i, 0, colorBand)) % 80;
+                indexes[i] = gradient > 0
+                    ? (indexes[0] + (i * gradient * colorBand / checksCount) % colorBand) % 80
+                    : divisorIndex == 0
+                        ? (indexes[0] + Utils.random(check.seed + i, 0, colorBand)) % 80
+                        : Utils.random(check.seed + i, 0, possibleColorChoices - 1);
+
+
+                console.log(indexes[i]);
             }
         }
 
@@ -97,6 +103,10 @@ library ChecksArt {
                 indexes[i] = indexes[i] < count
                     ? parentIndexes[branchIndex]
                     : compositedIndexes[branchIndex];
+
+                if (gradient > 0) {
+                    indexes[i] = (indexes[0] + (i * gradient * colorBand / checksCount) % colorBand) % 80;
+                }
             }
         }
 
