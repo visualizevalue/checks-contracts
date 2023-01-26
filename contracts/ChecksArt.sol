@@ -84,7 +84,9 @@ library ChecksArt {
     {
         uint8[8] memory divisors = DIVISORS();
         uint256 checksCount = divisors[divisorIndex];
-        uint32 seed = check.stored.seed; // TODO: test
+        uint32 seed = check.stored.seed;
+        uint8 gradient = check.gradient;
+        uint8 colorBand = check.colorBand;
 
         // If we're a composited check, we choose colors only based on
         // the slots available in our parents. Otherwise,
@@ -99,9 +101,6 @@ library ChecksArt {
 
         // Based on the color band, and whether it's a gradient check,
         // we select all other colors.
-        uint8 gradient = check.gradient;
-        uint8 colorBand = check.colorBand;
-
         if (divisorIndex < 6) {
             for (uint i = 1; i < checksCount; i++) {
                 indexes[i] = gradient > 0

@@ -83,7 +83,7 @@ contract Checks is IChecks, ERC721 {
 
             // Check settings
             check.colorBands[0] = _band(Utils.random(seed + 2, 160));
-            check.gradients[0]  = _gradient(Utils.random(seed + 1, 100));
+            check.gradients[0] = _gradient(Utils.random(seed + 1, 100));
             check.speed = uint8(Utils.random(seed + 3, 100));
             check.seed = uint32(seed);
 
