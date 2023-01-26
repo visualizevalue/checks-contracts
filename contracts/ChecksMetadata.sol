@@ -10,7 +10,7 @@ library ChecksMetadata {
 
     function trait(
         string memory traitType, string memory traitValue
-    ) public view returns (bytes memory) {
+    ) public pure returns (bytes memory) {
         return abi.encodePacked(
             '{',
                 '"trait_type": "', traitType, '",'

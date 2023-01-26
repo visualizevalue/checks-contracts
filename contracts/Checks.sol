@@ -87,8 +87,8 @@ contract Checks is IChecks, ERC721 {
             // Check settings
 
             check.colorBands[0] = uint8(Utils.random(seed + 1, 1, 160));
-            check.gradients[0] = uint8(Utils.random(seed + 2, 0, 100));
-            check.speed = uint8(Utils.random(seed + 3, 0, 100));
+            check.gradients[0] = uint8(Utils.random(seed + 2, 1, 100));
+            // check.speed = uint8(Utils.random(seed + 3, 1, 100));
             check.seed = uint32(seed % 4294967296); // max is the highest uint32
 
             // check.gradient[0] = gradientInput < 80 ? 0

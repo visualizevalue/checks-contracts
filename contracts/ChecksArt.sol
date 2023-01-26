@@ -50,18 +50,66 @@ library ChecksArt {
         return [ 80, 40, 20, 10, 5, 4, 1, 0 ];
     }
 
+    function COLOR_BANDS() public pure returns (uint8[7] memory) {
+        return [ 80, 40, 20, 10, 5, 4, 1 ];
+    }
+
+    function GRADIENTS() public pure returns (uint8[7] memory) {
+        return [ 0, 1, 2, 5, 8, 9, 10 ];
+    }
+
+    function _bandIndex(IChecks.StoredCheck memory check) internal pure returns(uint8) {
+        if (check.divisorIndex >= 6) return 0;
+
+        uint8 input = check.colorBands[check.divisorIndex];
+
+        return input > 80 ? 0
+             : input > 40 ? 1
+             : input > 20 ? 2
+             : input > 10 ? 3
+             : input >  8 ? 4
+             : input >  2 ? 5
+             : 6;
+    }
+
+    function _gradientIndex(IChecks.StoredCheck memory check) internal pure returns(uint8) {
+        if (check.divisorIndex >= 6) return 0;
+
+        uint8 input = check.gradients[check.divisorIndex];
+
+        return input <= 80 ? 0
+             : input <= 96 ? 1
+             : 2 + (input % 5);
+    }
+
     function getCheck(
         uint256 tokenId, IChecks.Checks storage checks
     ) public view returns (IChecks.Check memory check) {
         IChecks.StoredCheck memory stored = checks.all[tokenId];
+        // console.log(tokenId);
 
         check.stored = stored;
+        // check.checksCount = DIVISORS()[stored.divisorIndex];
         check.checksCount = DIVISORS()[stored.divisorIndex];
+        // check.checksCount = [ 80, 40, 20, 10, 5, 4, 1, 0 ][stored.divisorIndex];
+        // console.log(check.checksCount);
         check.composite = stored.divisorIndex > 0 ? stored.composites[stored.divisorIndex - 1] : 0;
-        check.direction = 1; // TODO: implement direction
-        check.colorBand = stored.divisorIndex < 6 ? stored.colorBands[stored.divisorIndex] : 1;
-        check.gradient = stored.divisorIndex < 6 ? stored.gradients[stored.divisorIndex] : 0;
-        check.speed = stored.speed;
+        // console.log(check.composite);
+        // check.direction = 1; // TODO: implement direction
+        // console.log('_gradientIndex(stored)');
+        // console.log(_gradientIndex(stored));
+        // check.gradient = GRADIENTS()[_gradientIndex(stored)];
+        check.gradient = 2;
+        // check.gradient = [ 0, 1, 2, 5, 8, 9, 10 ][_gradientIndex(stored)];
+        // console.log('check.gradient');
+        // console.log(check.gradient);
+        // check.colorBand = COLOR_BANDS()[_bandIndex(stored)];
+        check.colorBand = 40;
+        // check.colorBand = [ 80, 40, 20, 10, 5, 4, 1 ][_bandIndex(stored)];
+        // console.log('check.colorBand');
+        // console.log(check.colorBand);
+        check.speed = 2;
+        // check.speed = stored.speed;
 
         return check;
     }
@@ -72,6 +120,7 @@ library ChecksArt {
     )
         public view returns (uint256[] memory)
     {
+        console.log(divisorIndex);
         uint8[8] memory divisors = DIVISORS();
         uint256 checksCount = divisors[divisorIndex];
 
@@ -103,7 +152,6 @@ library ChecksArt {
 
         if (divisorIndex > 0) {
             uint8 previousDivisor = divisorIndex - 1;
-
             uint256[] memory parentIndexes = colorIndexes(previousDivisor, check, checks);
 
             IChecks.Check memory composited = getCheck(check.composite, checks);
@@ -292,6 +340,8 @@ library ChecksArt {
         uint256 tokenId, IChecks.Checks storage checks
     ) public view returns (bytes memory) {
         CheckRenderData memory data = collectRenderData(getCheck(tokenId, checks), checks);
+
+        console.log(tokenId);
 
         return abi.encodePacked(
             '<svg ',
