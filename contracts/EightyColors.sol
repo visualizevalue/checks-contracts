@@ -1,7 +1,34 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
+/**
+
+ /////////////////////////////////
+ //                             //
+ //                             //
+ //                             //
+ //       ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓       //
+ //       ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓       //
+ //       ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓       //
+ //       ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓       //
+ //       ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓       //
+ //       ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓       //
+ //       ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓       //
+ //       ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓       //
+ //       ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓       //
+ //       ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓       //
+ //                             //
+ //                             //
+ //                             //
+ /////////////////////////////////
+
+@title  EightyColors
+@author VisualizeValue
+@notice The eighty colors of Checks.
+*/
 library EightyColors {
+
+    /// @dev Theese are sorted in a gradient.
     function COLORS() public pure returns (string[80] memory) {
         return [
             'E84AA9',
@@ -86,4 +113,5 @@ library EightyColors {
             '6C31D7'
         ];
     }
+
 }
