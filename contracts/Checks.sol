@@ -100,17 +100,18 @@ contract Checks is IChecks, ERC721 {
     function _gradient(uint256 input) internal pure returns(uint8) {
         return input < 80 ? 0
              : input < 96 ? 1
-             : [2, 5, 8, 9, 10][input % 5];
+            //  : [2, 5, 8, 9, 10][input % 5];
+             : uint8(2 + (input % 5));
     }
 
     function _band(uint256 input) internal pure returns(uint8) {
-        return input > 80 ? 80
-             : input > 40 ? 40
-             : input > 20 ? 20
-             : input > 10 ? 10
-             : input >  8 ? 5
-             : input >  2 ? 4
-             : 1;
+        return input > 80 ? 0
+             : input > 40 ? 1
+             : input > 20 ? 2
+             : input > 10 ? 3
+             : input >  8 ? 4
+             : input >  2 ? 5
+             : 6;
     }
 
     function getCheck(uint256 tokenId) public view returns (Check memory check) {
@@ -274,9 +275,8 @@ contract Checks is IChecks, ERC721 {
                 ? _min(toKeep.gradients[divisorIndex], toBurn.gradients[divisorIndex])
                 : _minGt0(toKeep.gradients[divisorIndex], toBurn.gradients[divisorIndex]);
 
-            // We always take the smaller color band when breeding
-            // TODO: refactor to band averages
-            toKeep.colorBands[toKeep.divisorIndex] = _min(
+            // We breed the lower end average color band when breeding
+            toKeep.colorBands[toKeep.divisorIndex] = _avg(
                 toKeep.colorBands[divisorIndex],
                 toBurn.colorBands[divisorIndex]
             );

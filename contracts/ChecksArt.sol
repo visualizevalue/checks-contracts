@@ -63,14 +63,13 @@ library ChecksArt {
     ) public view returns (IChecks.Check memory check) {
         IChecks.StoredCheck memory stored = checks.all[tokenId];
         uint8 divisorIndex = stored.divisorIndex;
-        // bool hasManyChecks = divisorIndex < 6;
-        // console.log(tokenId);
+        bool hasManyChecks = divisorIndex < 6;
 
         check.stored = stored;
         check.checksCount = DIVISORS()[divisorIndex];
         check.composite = divisorIndex > 0 ? stored.composites[divisorIndex - 1] : 0;
-        check.gradient = divisorIndex < 6 ? stored.gradients[divisorIndex] : 0;
-        check.colorBand = divisorIndex < 6 ? stored.colorBands[divisorIndex] : 1;
+        check.colorBand = hasManyChecks ? COLOR_BANDS()[stored.colorBands[divisorIndex]] : 1;
+        check.gradient  = hasManyChecks ? stored.gradients[divisorIndex] : 0;
         check.speed = stored.speed;
 
         return check;
@@ -99,22 +98,39 @@ library ChecksArt {
         uint256[] memory indexes = new uint256[](checksCount);
         indexes[0] = Utils.random(seed, possibleColorChoices - 1);
 
-        // Based on the color band, and whether it's a gradient check,
-        // we select all other colors.
+        // If we have more than one check, continue selecting colors
         if (divisorIndex < 6) {
-            for (uint i = 1; i < checksCount; i++) {
-                indexes[i] = gradient > 0
-                    ? (indexes[0] + (i * gradient * colorBand / checksCount) % colorBand) % 80
-                    : divisorIndex == 0
-                        ? (indexes[0] + Utils.random(seed + i, colorBand)) % 80
-                        : Utils.random(seed + i, possibleColorChoices - 1);
+            if (gradient > 0) {
+                // If we're a gradient check, we select based on the color band looping around
+                // the 80 possible colors
+                for (uint i = 1; i < checksCount;) {
+                    indexes[i] = (indexes[0] + (i * gradient * colorBand / checksCount) % colorBand) % 80;
+                    unchecked { i++; }
+                }
+            } else if (divisorIndex == 0) {
+                // If we select initial non gradient colors, we just take random ones
+                // available in our color band
+                for (uint i = 1; i < checksCount;) {
+                    indexes[i] = (indexes[0] + Utils.random(seed + i, colorBand)) % 80;
+                    unchecked { i++; }
+                }
+            } else {
+                // If we have parent checks, we select our colors from their set
+                for (uint i = 1; i < checksCount;) {
+                    indexes[i] = Utils.random(seed + i, possibleColorChoices - 1);
+                    unchecked { i++; }
+                }
             }
         }
 
+        // We resolve our color indexes through our parent tree until we reach the root checks
         if (divisorIndex > 0) {
             uint8 previousDivisor = divisorIndex - 1;
+
+            // We already have our current check, but need the our parent state color indices
             uint256[] memory parentIndexes = colorIndexes(previousDivisor, check, checks);
 
+            // We also need to fetch the colors of the check that was composited into us
             IChecks.Check memory composited = getCheck(check.composite, checks);
             uint256[] memory compositedIndexes = colorIndexes(previousDivisor, composited, checks);
 
@@ -126,6 +142,8 @@ library ChecksArt {
                     ? parentIndexes[branchIndex]
                     : compositedIndexes[branchIndex];
             }
+
+            // If we have a gradient we actually need extra treatment for checks following the initial one
             if (gradient > 0) {
                 for (uint i = 1; i < checksCount; i++) {
                     indexes[i] = (indexes[0] + (i * gradient * colorBand / checksCount) % colorBand) % 80;

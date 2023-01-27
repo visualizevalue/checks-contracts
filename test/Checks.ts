@@ -139,6 +139,7 @@ describe('Checks', () => {
 
       const [singleId] = await composite(VV_TOKENS.slice(2, 66), checks, vv, 0, false)
       fs.writeFileSync(`test/dist/tokenuri-${singleId}`, await checks.tokenURI(singleId))
+      console.log(await checks.getCheck(singleId))
     })
   })
 })
