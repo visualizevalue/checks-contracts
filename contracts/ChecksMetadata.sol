@@ -6,24 +6,47 @@ import "./IChecks.sol";
 import "./ChecksArt.sol";
 import "./Utilities.sol";
 
+
+//        ✓✓✓✓✓✓✓  ✓✓✓✓✓✓✓✓    ✓✓✓✓✓✓    ✓✓✓✓✓✓✓✓   ✓✓✓✓✓✓✓     ✓✓
+//        ✓✓       ✓✓     ✓✓  ✓✓    ✓✓   ✓✓    ✓✓  ✓✓     ✓✓  ✓✓✓✓
+//        ✓✓       ✓✓     ✓✓  ✓✓             ✓✓           ✓✓    ✓✓
+//        ✓✓✓✓✓✓   ✓✓✓✓✓✓✓✓   ✓✓            ✓✓      ✓✓✓✓✓✓✓     ✓✓
+//        ✓✓       ✓✓   ✓✓    ✓✓           ✓✓      ✓✓           ✓✓
+//        ✓✓       ✓✓    ✓✓   ✓✓    ✓✓     ✓✓      ✓✓           ✓✓
+//        ✓✓✓✓✓✓✓  ✓✓     ✓✓   ✓✓✓✓✓✓      ✓✓      ✓✓✓✓✓✓✓✓✓   ✓✓✓✓
+
+
 library ChecksMetadata {
 
     function trait(
-        string memory traitType, string memory traitValue
-    ) public view returns (bytes memory) {
-        return abi.encodePacked(
+        string memory traitType, string memory traitValue, string memory append
+    ) public pure returns (string memory) {
+        return string(abi.encodePacked(
             '{',
                 '"trait_type": "', traitType, '",'
                 '"value": "', traitValue, '"'
-            '}'
-        );
+            '}',
+            append
+        ));
+    }
+
+    function gradients(uint8 gradientIndex) public pure returns (string memory) {
+        return [
+            'None', 'Linear', 'Double Linear', 'Reflected', 'Double Angled', 'Angled', 'Linear Z'
+        ][gradientIndex];
+    }
+
+    function colorBand(uint8 bandIndex) public pure returns (string memory) {
+        return [ '100%', '50%', '25%', '12.5%', '6.25%', '4%', '1.25%' ][bandIndex];
     }
 
     function tokenURI(
         uint256 tokenId, IChecks.Checks storage checks
     ) public view returns (string memory) {
         IChecks.Check memory check = ChecksArt.getCheck(tokenId, checks);
+
         bytes memory svg = ChecksArt.generateSVG(tokenId, checks);
+
         bytes memory metadata = abi.encodePacked(
             '{',
                 '"name": "Checks ', Utils.uint2str(tokenId), '",',
@@ -37,12 +60,19 @@ library ChecksMetadata {
                     Base64.encode(generateHTML(tokenId, svg)),
                     '",',
                 '"attributes": [',
-                    trait('Checks', Utils.uint2str(uint256(check.checksCount))),',',
-                    // TODO: Refactor Check to have current data...
-                    // TODO: Color Band should have human readable output in Percentages
-                    trait('Color Band', Utils.uint2str(uint256(check.colorBand))),',',
-                    trait('Gradient', Utils.uint2str(uint256(check.gradient))),',',
-                    trait('Speed', check.speed == 4 ? '2x' : check.speed == 2 ? '1x' : '0.5x'),
+                    check.hasManyChecks
+                        ? trait('Color Band', colorBand(check.stored.colorBands[check.stored.divisorIndex]), ',')
+                        : '',
+                    check.hasManyChecks
+                        ? trait('Gradient', gradients(check.stored.gradients[check.stored.divisorIndex]), ',')
+                        : '',
+                    check.checksCount > 0
+                        ? trait('Speed', check.speed == 4 ? '2x' : check.speed == 2 ? '1x' : '0.5x', ',')
+                        : '',
+                    check.checksCount > 0
+                        ? trait('Direction', check.direction == 0 ? 'Down' : 'Up', ',')
+                        : '',
+                    trait('Checks', Utils.uint2str(uint256(check.checksCount)), ''),
                 ']',
             '}'
         );

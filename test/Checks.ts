@@ -105,6 +105,7 @@ describe('Checks', () => {
       const { checks, vv } = await loadFixture(mintedFixture)
 
       const [singleId] = await composite(VV_TOKENS.slice(0, 64), checks, vv, 0, false)
+      console.log('composited', singleId)
       await fetchAndRender(singleId, checks)
 
       const [fourId] = await composite(VV_TOKENS.slice(64, 96), checks, vv, 0, false)
@@ -127,7 +128,7 @@ describe('Checks', () => {
   })
 
   describe('Metadata', () => {
-    it.only('Should show correct metadata', async () => {
+    it('Should show correct metadata', async () => {
       const { checks, vv } = await loadFixture(mintedFixture)
 
       const uri = await checks.tokenURI(VV_TOKENS[0])
@@ -137,7 +138,8 @@ describe('Checks', () => {
       fs.writeFileSync(`test/dist/tokenuri-${VV_TOKENS[1]}`, uri2)
 
       const [singleId] = await composite(VV_TOKENS.slice(2, 66), checks, vv, 0, false)
-      await fetchAndRender(singleId, checks)
+      fs.writeFileSync(`test/dist/tokenuri-${singleId}`, await checks.tokenURI(singleId))
+      console.log(await checks.getCheck(singleId))
     })
   })
 })

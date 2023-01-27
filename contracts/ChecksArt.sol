@@ -5,27 +5,6 @@ import "./EightyColors.sol";
 import "./Utilities.sol";
 import "./IChecks.sol";
 
-import "hardhat/console.sol";
-
-struct CheckRenderData {
-    IChecks.Check check;
-    uint256[] colorIndexes;
-    string[] colors;
-    string gridColor;
-    string duration;
-    string scale;
-    uint32 seed;
-    uint16 rowX;
-    uint16 rowY;
-    uint8 count;
-    uint8 spaceX;
-    uint8 spaceY;
-    uint8 perRow;
-    uint8 indexInRow;
-    uint8 isIndented;
-    bool indent;
-    bool isNewRow;
-}
 
 /////////   VV CHECKS   /////////
 //                             //
@@ -43,6 +22,8 @@ struct CheckRenderData {
 //                             //
 //                             //
 /////  VERIFY, DON'T TRUST   ////
+
+
 library ChecksArt {
     string public constant CHECKS_PATH = 'M21.36 9.886A3.933 3.933 0 0 0 18 8c-1.423 0-2.67.755-3.36 1.887a3.935 3.935 0 0 0-4.753 4.753A3.933 3.933 0 0 0 8 18c0 1.423.755 2.669 1.886 3.36a3.935 3.935 0 0 0 4.753 4.753 3.933 3.933 0 0 0 4.863 1.59 3.953 3.953 0 0 0 1.858-1.589 3.935 3.935 0 0 0 4.753-4.754A3.933 3.933 0 0 0 28 18a3.933 3.933 0 0 0-1.887-3.36 3.934 3.934 0 0 0-1.042-3.711 3.934 3.934 0 0 0-3.71-1.043Zm-3.958 11.713 4.562-6.844c.566-.846-.751-1.724-1.316-.878l-4.026 6.043-1.371-1.368c-.717-.722-1.836.396-1.116 1.116l2.17 2.15a.788.788 0 0 0 1.097-.22Z';
 
@@ -50,18 +31,28 @@ library ChecksArt {
         return [ 80, 40, 20, 10, 5, 4, 1, 0 ];
     }
 
+    function COLOR_BANDS() public pure returns (uint8[7] memory) {
+        return [ 80, 40, 20, 10, 5, 4, 1 ];
+    }
+
+    function GRADIENTS() public pure returns (uint8[7] memory) {
+        return [ 0, 1, 2, 5, 8, 9, 10 ];
+    }
+
     function getCheck(
         uint256 tokenId, IChecks.Checks storage checks
     ) public view returns (IChecks.Check memory check) {
         IChecks.StoredCheck memory stored = checks.all[tokenId];
+        uint8 divisorIndex = stored.divisorIndex;
 
         check.stored = stored;
-        check.checksCount = DIVISORS()[stored.divisorIndex];
-        check.composite = stored.divisorIndex > 0 ? stored.composites[stored.divisorIndex - 1] : 0;
-        check.direction = 1; // TODO: implement direction
-        check.colorBand = stored.divisorIndex < 6 ? stored.colorBands[stored.divisorIndex] : 1;
-        check.gradient = stored.divisorIndex < 6 ? stored.gradients[stored.divisorIndex] : 0;
-        check.speed = stored.speed;
+        check.hasManyChecks = divisorIndex < 6;
+        check.checksCount = DIVISORS()[divisorIndex];
+        check.composite = divisorIndex > 0 ? stored.composites[divisorIndex - 1] : 0;
+        check.colorBand = check.hasManyChecks ? COLOR_BANDS()[stored.colorBands[divisorIndex]] : 1;
+        check.gradient  = check.hasManyChecks ? stored.gradients[divisorIndex] : 0;
+        check.direction = uint8(stored.animation % 2);
+        check.speed = uint8(2**(stored.animation % 3));
 
         return check;
     }
@@ -74,6 +65,9 @@ library ChecksArt {
     {
         uint8[8] memory divisors = DIVISORS();
         uint256 checksCount = divisors[divisorIndex];
+        uint32 seed = check.stored.seed;
+        uint8 gradient = check.gradient;
+        uint8 colorBand = check.colorBand;
 
         // If we're a composited check, we choose colors only based on
         // the slots available in our parents. Otherwise,
@@ -84,41 +78,69 @@ library ChecksArt {
 
         // We initialize our index and select the first color
         uint256[] memory indexes = new uint256[](checksCount);
-        indexes[0] = Utils.random(check.stored.seed, 0, possibleColorChoices - 1);
+        indexes[0] = Utils.random(seed, possibleColorChoices - 1);
 
-        // Based on the color band, and whether it's a gradient check,
-        // we select all other colors.
-        uint8 gradient = check.gradient;
-        uint8 colorBand = check.colorBand;
-
-        if (divisorIndex < 6) {
-            for (uint i = 1; i < checksCount; i++) {
-                indexes[i] = gradient > 0
-                    ? (indexes[0] + (i * gradient * colorBand / checksCount) % colorBand) % 80
-                    : divisorIndex == 0
-                        ? (indexes[0] + Utils.random(check.stored.seed + i, 0, colorBand)) % 80
-                        : Utils.random(check.stored.seed + i, 0, possibleColorChoices - 1);
+        // If we have more than one check, continue selecting colors
+        if (check.hasManyChecks) {
+            if (gradient > 0) {
+                // If we're a gradient check, we select based on the color band looping around
+                // the 80 possible colors
+                for (uint i = 1; i < checksCount;) {
+                    indexes[i] = (indexes[0] + (i * gradient * colorBand / checksCount) % colorBand) % 80;
+                    unchecked { i++; }
+                }
+            } else if (divisorIndex == 0) {
+                // If we select initial non gradient colors, we just take random ones
+                // available in our color band
+                for (uint i = 1; i < checksCount;) {
+                    indexes[i] = (indexes[0] + Utils.random(seed + i, colorBand)) % 80;
+                    unchecked { i++; }
+                }
+            } else {
+                // If we have parent checks, we select our colors from their set
+                for (uint i = 1; i < checksCount;) {
+                    indexes[i] = Utils.random(seed + i, possibleColorChoices - 1);
+                    unchecked { i++; }
+                }
             }
         }
 
+        // We resolve our color indexes through our parent tree until we reach the root checks
         if (divisorIndex > 0) {
             uint8 previousDivisor = divisorIndex - 1;
 
+            // We already have our current check, but need the our parent state color indices
             uint256[] memory parentIndexes = colorIndexes(previousDivisor, check, checks);
 
+            // We also need to fetch the colors of the check that was composited into us
             IChecks.Check memory composited = getCheck(check.composite, checks);
             uint256[] memory compositedIndexes = colorIndexes(previousDivisor, composited, checks);
 
             // Replace random indices with parent / root color indices
             uint8 count = divisors[previousDivisor];
-            for (uint i = 0; i < checksCount; i++) {
-                uint256 branchIndex = indexes[i] % count;
-                indexes[i] = indexes[i] < count
-                    ? parentIndexes[branchIndex]
-                    : compositedIndexes[branchIndex];
 
-                if (gradient > 0) {
+            // We always select the first color from our parent
+            uint256 initialBranchIndex = indexes[0] % count;
+            indexes[0] = indexes[0] < count
+                ? parentIndexes[initialBranchIndex]
+                : compositedIndexes[initialBranchIndex];
+
+            // If we don't have a gradient, we continue resolving from our parent for the remaining checks
+            if (gradient == 0) {
+                for (uint256 i = 0; i < checksCount;) {
+                    uint256 branchIndex = indexes[i] % count;
+                    indexes[i] = indexes[i] < count
+                        ? parentIndexes[branchIndex]
+                        : compositedIndexes[branchIndex];
+
+                    unchecked { i++; }
+                }
+            // If we have a gradient we base the remaining colors off our initial selection
+            } else {
+                for (uint256 i = 1; i < checksCount;) {
                     indexes[i] = (indexes[0] + (i * gradient * colorBand / checksCount) % colorBand) % 80;
+
+                    unchecked { i++; }
                 }
             }
         }
@@ -186,8 +208,19 @@ library ChecksArt {
         uint8 count = 20;
 
         bytes memory values;
-        for (uint i = offset; i < offset + 80; i+=4) {
-            values = abi.encodePacked(values, '#', allColors[i % 80], ';');
+
+        // Down
+        if (data.check.direction == 0) {
+            for (uint256 i = offset + 80; i > offset;) {
+                values = abi.encodePacked(values, '#', allColors[i % 80], ';');
+                unchecked { i-=4; }
+            }
+        // Up
+        } else {
+            for (uint256 i = offset; i < offset + 80;) {
+                values = abi.encodePacked(values, '#', allColors[i % 80], ';');
+                unchecked { i+=4; }
+            }
         }
 
         // Add initial color as last one for smooth animations
@@ -228,7 +261,6 @@ library ChecksArt {
             checksBytes = abi.encodePacked(checksBytes, abi.encodePacked(
                 '<g transform="translate(', translateX, ', ', translateY, ') scale(', data.scale, ')">',
                     '<use href="#check" fill="#',data.colors[i],'">',
-                    // '<use href="#square" transform="translate(-8, -7) scale(',checksCount > 20 ? '1' : '2',')" fill="#',data.colors[i],'">',
                         '<animate ',
                             'attributeName="fill" values="',animation,'" ',
                             'dur="',duration,'s" begin="animation.begin" ',
@@ -322,4 +354,24 @@ library ChecksArt {
             '</svg>'
         );
     }
+}
+
+struct CheckRenderData {
+    IChecks.Check check;
+    uint256[] colorIndexes;
+    string[] colors;
+    string gridColor;
+    string duration;
+    string scale;
+    uint32 seed;
+    uint16 rowX;
+    uint16 rowY;
+    uint8 count;
+    uint8 spaceX;
+    uint8 spaceY;
+    uint8 perRow;
+    uint8 indexInRow;
+    uint8 isIndented;
+    bool indent;
+    bool isNewRow;
 }

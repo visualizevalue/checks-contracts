@@ -9,10 +9,15 @@ library Utils {
         );
     }
 
+    /// @dev Pseudorandom number based on input max bound
+    function random(uint256 input, uint256 max) public pure returns (uint256) {
+        return max - (uint256(keccak256(abi.encodePacked(input))) % max);
+    }
+
     /// @dev Pseudorandom number based on input within bounds
-    function random(uint256 input, uint256 min, uint256 max) public pure returns (uint256) {
-        uint256 randRange = max - min;
-        return max - (uint256(keccak256(abi.encodePacked(input))) % randRange) - 1;
+    function random(uint256 input, uint256 from, uint256 to) public pure returns (uint256) {
+        uint256 randRange = to - from;
+        return to - (uint256(keccak256(abi.encodePacked(input))) % randRange) - 1;
     }
 
     /// @dev Convert an integer to a string
@@ -36,5 +41,21 @@ library Utils {
             _i /= 10;
         }
         return string(bstr);
+    }
+
+    function minGt0(uint8 one, uint8 two) public pure returns (uint8) {
+        return one > two
+            ? two > 0
+                ? two
+                : one
+            : two;
+    }
+
+    function min(uint8 one, uint8 two) public pure returns (uint8) {
+        return one < two ? one : two;
+    }
+
+    function avg(uint8 one, uint8 two) public pure returns (uint8) {
+        return (one & two) + (one ^ two) / 2;
     }
 }
