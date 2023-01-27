@@ -294,12 +294,17 @@ contract Checks is IChecks, ERC721 {
             uint8 divisorIndex
         ) = _tokenOperation(tokenId, burnId);
 
+        // Copy over static genome settings
         toKeep.seed = toBurn.seed;
-        toKeep.gradients[divisorIndex] = toBurn.gradients[divisorIndex];
-        toKeep.colorBands[divisorIndex] = toBurn.colorBands[divisorIndex];
         toKeep.animation = toBurn.animation;
 
-        // TODO: Copy over all parent gradient & band settings as well.
+        // Copy over generational genome settings
+        for (uint256 i = 0; i <= divisorIndex;) {
+            toKeep.gradients[i] = toBurn.gradients[i];
+            toKeep.colorBands[i] = toBurn.colorBands[i];
+
+            unchecked { i++; }
+        }
 
         // Perform the burn.
         _burn(burnId);
