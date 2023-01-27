@@ -14,7 +14,8 @@ interface IChecks {
 
     struct Check {
         StoredCheck stored;
-        uint16 composite;    // The parent tokenId that was composited into this one
+        uint16 composite;     // The parent tokenId that was composited into this one
+        bool hasManyChecks;  // Quick access for whether the check has many checks
         uint8 checksCount;  // How many checks this token has
         uint8 colorBand;   // 100%, 50%, 25%, 12.5%, 6.25%, 5%, 1.25%
         uint8 gradient;   // Linearly through the colorBand [1, 2, 3]
