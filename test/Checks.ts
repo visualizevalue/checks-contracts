@@ -89,6 +89,39 @@ describe('Checks', () => {
     })
   })
 
+  describe('Swapping', () => {
+    it('Should not allow people to swap tokens of other users', async () => {
+      const { checks } = await loadFixture(mintedFixture)
+
+      const [toKeep, toBurn] = VV_TOKENS.slice(0, 2)
+      await expect(checks.inItForTheArt(toKeep, toBurn))
+        .to.be.revertedWith('Not the owner or approved')
+      })
+
+    it('Should allow people to swap their own tokens', async () => {
+      const { checks, vv } = await loadFixture(mintedFixture)
+
+      const [toKeep, toBurn] = VV_TOKENS.slice(0, 2)
+      await expect(checks.connect(vv).inItForTheArt(toKeep, toBurn))
+        .to.emit(checks, 'Sacrifice')
+        .withArgs(toBurn, toKeep)
+    })
+
+    it('Should allow people to swap approved tokens', async () => {
+      const { checks, vv, jalil } = await loadFixture(mintedFixture)
+      const [toKeep, toBurn] = VV_TOKENS.slice(0, 2)
+
+      await expect(checks.connect(jalil).inItForTheArt(toKeep, toBurn))
+        .to.be.reverted
+
+      await checks.connect(vv).setApprovalForAll(jalil.address, true)
+
+      await expect(checks.connect(jalil).inItForTheArt(toKeep, toBurn))
+        .to.emit(checks, 'Sacrifice')
+        .withArgs(toBurn, toKeep)
+    })
+  })
+
   describe('Compositing', () => {
     it('Should allow to composite originals', async () => {
       const { checks, vv } = await loadFixture(mintedFixture)
