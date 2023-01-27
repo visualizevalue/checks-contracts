@@ -2,44 +2,57 @@
 pragma solidity ^0.8.17;
 
 import "./EightyColors.sol";
-import "./Utilities.sol";
 import "./IChecks.sol";
+import "./Utilities.sol";
 
+/**
 
-/////////   VV CHECKS   /////////
-//                             //
-//                             //
-//       ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓       //
-//       ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓       //
-//       ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓       //
-//       ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓       //
-//       ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓       //
-//       ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓       //
-//       ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓       //
-//       ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓       //
-//       ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓       //
-//       ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓       //
-//                             //
-//                             //
-/////  VERIFY, DON'T TRUST   ////
+ /////////   VV CHECKS   /////////
+ //                             //
+ //                             //
+ //                             //
+ //       ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓       //
+ //       ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓       //
+ //       ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓       //
+ //       ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓       //
+ //       ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓       //
+ //       ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓       //
+ //       ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓       //
+ //       ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓       //
+ //       ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓       //
+ //       ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓       //
+ //                             //
+ //                             //
+ //                             //
+ /////   DONT TRUST, CHECK   /////
 
-
+@title  ChecksArt
+@author VisualizeValue
+@notice Renders the Checks visuals.
+*/
 library ChecksArt {
 
+    /// @dev The path for a 20x20 px check based on a 36x36 px frame.
     string public constant CHECKS_PATH = 'M21.36 9.886A3.933 3.933 0 0 0 18 8c-1.423 0-2.67.755-3.36 1.887a3.935 3.935 0 0 0-4.753 4.753A3.933 3.933 0 0 0 8 18c0 1.423.755 2.669 1.886 3.36a3.935 3.935 0 0 0 4.753 4.753 3.933 3.933 0 0 0 4.863 1.59 3.953 3.953 0 0 0 1.858-1.589 3.935 3.935 0 0 0 4.753-4.754A3.933 3.933 0 0 0 28 18a3.933 3.933 0 0 0-1.887-3.36 3.934 3.934 0 0 0-1.042-3.711 3.934 3.934 0 0 0-3.71-1.043Zm-3.958 11.713 4.562-6.844c.566-.846-.751-1.724-1.316-.878l-4.026 6.043-1.371-1.368c-.717-.722-1.836.396-1.116 1.116l2.17 2.15a.788.788 0 0 0 1.097-.22Z';
 
+    /// @dev The semiperfect divisors of the 80 checks.
     function DIVISORS() public pure returns (uint8[8] memory) {
         return [ 80, 40, 20, 10, 5, 4, 1, 0 ];
     }
 
+    /// @dev The different color band sizes that we use for the art.
     function COLOR_BANDS() public pure returns (uint8[7] memory) {
         return [ 80, 40, 20, 10, 5, 4, 1 ];
     }
 
+    /// @dev The gradient increment steps.
     function GRADIENTS() public pure returns (uint8[7] memory) {
         return [ 0, 1, 2, 5, 8, 9, 10 ];
     }
 
+    /// @dev Load a check from storage and fill its current state settings.
+    /// @param tokenId The id of the check to fetch.
+    /// @param checks The DB containing all checks.
     function getCheck(
         uint256 tokenId, IChecks.Checks storage checks
     ) public view returns (IChecks.Check memory check) {
@@ -51,14 +64,17 @@ library ChecksArt {
         check.checksCount = DIVISORS()[divisorIndex];
         check.composite = divisorIndex > 0 ? stored.composites[divisorIndex - 1] : 0;
         check.colorBand = check.hasManyChecks ? COLOR_BANDS()[stored.colorBands[divisorIndex]] : 1;
-        check.gradient  = check.hasManyChecks ? stored.gradients[divisorIndex] : 0;
+        check.gradient  = check.hasManyChecks ? GRADIENTS()[stored.gradients[divisorIndex]] : 0;
         check.direction = uint8(stored.animation % 2);
         check.speed = uint8(2**(stored.animation % 3));
 
         return check;
     }
 
-    /// @dev Generate indexes for the color slots of its parent (root being the COLORS themselves).
+    /// @dev Generate indexes for the color slots of check parents (up to the EightyColors.COLORS themselves).
+    /// @param divisorIndex The current divisorIndex to query.
+    /// @param check The current check to investigate.
+    /// @param checks The DB containing all checks.
     function colorIndexes(
         uint8 divisorIndex, IChecks.Check memory check, IChecks.Checks storage checks
     )
@@ -149,6 +165,9 @@ library ChecksArt {
         return indexes;
     }
 
+    /// @dev Fetch all colors of a given Check.
+    /// @param check The check to get colors for.
+    /// @param checks The DB containing all checks.
     function colors(
         IChecks.Check memory check, IChecks.Checks storage checks
     ) public view returns (string[] memory, uint256[] memory) {
@@ -166,8 +185,10 @@ library ChecksArt {
         string[] memory checkColors = new string[](indexes.length);
         string[80] memory allColors = EightyColors.COLORS();
 
-        // Always set the first color
+        // Always set the first color.
         checkColors[0] = allColors[indexes[0]];
+
+        // Resolve each color via their index in EightyColors.COLORS.
         for (uint i = 1; i < indexes.length; i++) {
             checkColors[i] = allColors[indexes[i]];
         }
@@ -175,6 +196,8 @@ library ChecksArt {
         return (checkColors, indexes);
     }
 
+    /// @dev Get the number of checks we should display per row.
+    /// @param checks The number of checks in the piece.
     function perRow(uint8 checks) public pure returns (uint8) {
         return checks == 80
             ? 8
@@ -185,6 +208,8 @@ library ChecksArt {
                     : 1;
     }
 
+    /// @dev Get the X-offset for positioning checks horizontally.
+    /// @param checks The number of checks in the piece.
     function rowX(uint8 checks) public pure returns (uint16) {
         return checks <= 1
             ? 286
@@ -195,6 +220,8 @@ library ChecksArt {
                     : 196;
     }
 
+    /// @dev Get the Y-offset for positioning checks verticallt.
+    /// @param checks The number of checks in the piece.
     function rowY(uint8 checks) public pure returns (uint16) {
         return checks > 4
             ? 160
@@ -203,20 +230,28 @@ library ChecksArt {
                 : 286;
     }
 
-    function fillAnimation(CheckRenderData memory data, uint256 offset, string[80] memory allColors) public pure returns (
-        string memory duration, string memory animation
-    ) {
+    /// @dev Get the animation for an individual check of a piece.
+    /// @param data The data object containing rendering settings.
+    /// @param offset The index position of the check in question.
+    /// @param allColors All available colors.
+    function fillAnimation(
+        CheckRenderData memory data,
+        uint256 offset,
+        string[80] memory allColors
+    ) public pure returns (string memory duration, string memory animation)
+    {
+        // We only pick 20 colors from our gradient to reduce execution time.
         uint8 count = 20;
 
         bytes memory values;
 
-        // Down
+        // Reverse loop through our color gradient.
         if (data.check.direction == 0) {
             for (uint256 i = offset + 80; i > offset;) {
                 values = abi.encodePacked(values, '#', allColors[i % 80], ';');
                 unchecked { i-=4; }
             }
-        // Up
+        // Forward loop through our color gradient.
         } else {
             for (uint256 i = offset; i < offset + 80;) {
                 values = abi.encodePacked(values, '#', allColors[i % 80], ';');
@@ -224,23 +259,26 @@ library ChecksArt {
             }
         }
 
-        // Add initial color as last one for smooth animations
+        // Add initial color as last one for smooth animations.
         values = abi.encodePacked(values, '#', allColors[offset]);
 
+        // Also compute the duration for the animation.
         return (Utils.uint2str(count * 2 / data.check.speed), string(values));
     }
 
+    /// @dev Generate the SVG code for all checks in a given token.
+    /// @param data The data object containing rendering settings.
     function generateChecks(CheckRenderData memory data) public pure returns (string memory) {
         bytes memory checksBytes;
         string[80] memory allColors = EightyColors.COLORS();
 
         uint8 checksCount = data.count;
         for (uint8 i = 0; i < checksCount; i++) {
-            // Row Positioning
+            // Compute row settings.
             data.indexInRow = i % data.perRow;
             data.isNewRow = data.indexInRow == 0 && i > 0;
 
-            // Offsets
+            // Compute offsets.
             if (data.isNewRow) data.rowY += data.spaceY;
             if (data.isNewRow && data.indent) {
                 if (i == 0) {
@@ -256,7 +294,7 @@ library ChecksArt {
             string memory translateX = Utils.uint2str(data.rowX + data.indexInRow * data.spaceX);
             string memory translateY = Utils.uint2str(data.rowY);
 
-            // Animation
+            // Load the animation for this check.
             (string memory duration, string memory animation) = fillAnimation(data, data.colorIndexes[i], allColors);
 
             checksBytes = abi.encodePacked(checksBytes, abi.encodePacked(

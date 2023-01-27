@@ -193,9 +193,12 @@ contract Checks is IChecks, ERC721 {
     /// @dev A common purpose burn method.
     function burn(uint256 tokenId) external {
         require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC721: caller is not token owner or approved");
+
+        // Perform the burn.
         _burn(tokenId);
 
-        unchecked { checks.minted--; }
+        // Keep track of supply.
+        unchecked { checks.burned++; }
     }
 
     /// @notice Get the colors of all checks in a given token.
