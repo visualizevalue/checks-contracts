@@ -96,7 +96,7 @@ describe('Checks', () => {
       const [toKeep, toBurn] = VV_TOKENS.slice(0, 2)
       await expect(checks.inItForTheArt(toKeep, toBurn))
         .to.be.revertedWith('Not the owner or approved')
-      })
+    })
 
     it('Should allow people to swap their own tokens', async () => {
       const { checks, vv } = await loadFixture(mintedFixture)
@@ -119,6 +119,20 @@ describe('Checks', () => {
       await expect(checks.connect(jalil).inItForTheArt(toKeep, toBurn))
         .to.emit(checks, 'Sacrifice')
         .withArgs(toBurn, toKeep)
+    })
+
+    it('Should allow people to swap multiple tokens at once', async () => {
+      const { checks, vv } = await loadFixture(mintedFixture)
+
+      const toKeep = VV_TOKENS.slice(0, 3)
+      const toBurn = VV_TOKENS.slice(3, 6)
+      await expect(checks.connect(vv).inItForTheArts(toKeep, toBurn))
+        .to.emit(checks, 'Sacrifice')
+        .withArgs(toBurn[0], toKeep[0])
+        .to.emit(checks, 'Sacrifice')
+        .withArgs(toBurn[1], toKeep[1])
+        .to.emit(checks, 'Sacrifice')
+        .withArgs(toBurn[2], toKeep[2])
     })
   })
 
