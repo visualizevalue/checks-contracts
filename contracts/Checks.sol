@@ -148,14 +148,16 @@ contract Checks is IChecks, ERC721 {
         uint256 count = tokenIds.length;
         require(count == 64, "Final composite requires 64 single Checks");
         for (uint i = 0; i < count;) {
-            require(checks.all[tokenIds[i]].divisorIndex == 6, "Non-single Check used");
+            uint256 id = tokenIds[i];
+            require(checks.all[id].divisorIndex == 6, "Non-single Check used");
+            require(_isApprovedOrOwner(msg.sender, id), "Not allowed");
 
             unchecked { i++; }
         }
 
         // Complete final composite.
-        uint256 id = tokenIds[0];
-        StoredCheck storage check = checks.all[id];
+        uint256 blackCheckId = tokenIds[0];
+        StoredCheck storage check = checks.all[blackCheckId];
         check.divisorIndex = 7;
 
         // Burn all 63 other Checks.
