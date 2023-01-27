@@ -181,6 +181,7 @@ contract Checks is IChecks, ERC721 {
 
             unchecked { i++; }
         }
+        unchecked { checks.burned += 63; }
 
         // When one is released from the prison of self, that is indeed freedom.
         // For the most great prison is the prison of self.
