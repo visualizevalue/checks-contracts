@@ -23,28 +23,9 @@ import "./Utilities.sol";
 */
 library ChecksMetadata {
 
-    function trait(
-        string memory traitType, string memory traitValue, string memory append
-    ) public pure returns (string memory) {
-        return string(abi.encodePacked(
-            '{',
-                '"trait_type": "', traitType, '",'
-                '"value": "', traitValue, '"'
-            '}',
-            append
-        ));
-    }
-
-    function gradients(uint8 gradientIndex) public pure returns (string memory) {
-        return [
-            'None', 'Linear', 'Double Linear', 'Reflected', 'Double Angled', 'Angled', 'Linear Z'
-        ][gradientIndex];
-    }
-
-    function colorBand(uint8 bandIndex) public pure returns (string memory) {
-        return [ '100%', '50%', '25%', '12.5%', '6.25%', '4%', '1.25%' ][bandIndex];
-    }
-
+    /// @dev Render the JSON Metadata for a given Checks token.
+    /// @param tokenId The id of the token to render.
+    /// @param checks The DB containing all checks.
     function tokenURI(
         uint256 tokenId, IChecks.Checks storage checks
     ) public view returns (string memory) {
@@ -90,6 +71,39 @@ library ChecksMetadata {
         );
     }
 
+    /// @dev Get the names for different gradients. Compare ChecksArt.GRADIENTS.
+    /// @param gradientIndex The index of the gradient.
+    function gradients(uint8 gradientIndex) public pure returns (string memory) {
+        return [
+            'None', 'Linear', 'Double Linear', 'Reflected', 'Double Angled', 'Angled', 'Linear Z'
+        ][gradientIndex];
+    }
+
+    /// @dev Get the percentage values for different color bands. Compare ChecksArt.COLOR_BANDS.
+    /// @param bandIndex The index of the color band.
+    function colorBand(uint8 bandIndex) public pure returns (string memory) {
+        return [ '100%', '50%', '25%', '12.5%', '6.25%', '4%', '1.25%' ][bandIndex];
+    }
+
+    /// @dev Generate the SVG snipped for a single attribute.
+    /// @param traitType The `trait_type` for this trait.
+    /// @param traitValue The `value` for this trait.
+    /// @param append Helper to append a comma.
+    function trait(
+        string memory traitType, string memory traitValue, string memory append
+    ) public pure returns (string memory) {
+        return string(abi.encodePacked(
+            '{',
+                '"trait_type": "', traitType, '",'
+                '"value": "', traitValue, '"'
+            '}',
+            append
+        ));
+    }
+
+    /// @dev Generate the HTML for the animation_url in the metadata.
+    /// @param tokenId The id of the token to generate the embed for.
+    /// @param svg The rendered SVG code to embed in the HTML.
     function generateHTML(uint256 tokenId, bytes memory svg) public pure returns (bytes memory) {
         return abi.encodePacked(
             '<!DOCTYPE html>',
