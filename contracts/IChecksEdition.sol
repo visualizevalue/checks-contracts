@@ -10,4 +10,7 @@ interface IChecksEdition {
 
     /// @dev Returns if the `operator` is allowed to manage all of the assets of `owner`.
     function isApprovedForAll(address owner, address operator) external view returns (bool);
+
+    /// @dev Returns the approved operator of a specific token.
+    function getApproved(uint256 tokenId) external view returns (address operator);
 }

@@ -101,7 +101,7 @@ describe('Checks', () => {
       expect(await checks.totalSupply()).to.equal(totalSupply - 63) // One survives
     })
 
-    it.only('Should allow to composite and render many originals', async () => {
+    it('Should allow to composite and render many originals', async () => {
       const { checks, vv } = await loadFixture(mintedFixture)
 
       const [singleId] = await composite(VV_TOKENS.slice(0, 64), checks, vv, 0, false)

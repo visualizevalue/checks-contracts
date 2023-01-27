@@ -3,54 +3,49 @@ pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
-import "./IChecksEdition.sol";
-import "./IChecks.sol";
 import "./ChecksArt.sol";
 import "./ChecksMetadata.sol";
+import "./IChecks.sol";
+import "./IChecksEdition.sol";
 import "./Utilities.sol";
 
-
-//✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
-//✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
-//✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
-//✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
-//✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓            ✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
-//✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓                  ✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
-//✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓        ✓                ✓        ✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
-//✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓                                        ✓✓✓✓✓✓✓✓✓✓✓✓✓✓
-//✓✓✓✓✓✓✓✓✓✓✓✓✓✓                                          ✓✓✓✓✓✓✓✓✓✓✓✓✓
-//✓✓✓✓✓✓✓✓✓✓✓✓✓✓                                          ✓✓✓✓✓✓✓✓✓✓✓✓✓
-//✓✓✓✓✓✓✓✓✓✓✓✓✓✓                            ✓✓✓           ✓✓✓✓✓✓✓✓✓✓✓✓✓
-//✓✓✓✓✓✓✓✓✓✓✓    ✓                        ✓✓✓✓✓         ✓    ✓✓✓✓✓✓✓✓✓✓
-//✓✓✓✓✓✓✓✓✓✓                            ✓✓✓✓✓                 ✓✓✓✓✓✓✓✓✓
-//✓✓✓✓✓✓✓✓✓                           ✓✓✓✓✓                    ✓✓✓✓✓✓✓✓
-//✓✓✓✓✓✓✓✓✓               ✓✓✓       ✓✓✓✓✓                      ✓✓✓✓✓✓✓✓
-//✓✓✓✓✓✓✓✓✓               ✓✓✓✓✓   ✓✓✓✓✓                       ✓✓✓✓✓✓✓✓✓
-//✓✓✓✓✓✓✓✓✓✓                ✓✓✓✓✓✓✓✓✓                        ✓✓✓✓✓✓✓✓✓✓
-//✓✓✓✓✓✓✓✓✓✓✓✓ ✓              ✓✓✓✓✓                      ✓ ✓✓✓✓✓✓✓✓✓✓✓✓
-//✓✓✓✓✓✓✓✓✓✓✓✓✓✓                                          ✓✓✓✓✓✓✓✓✓✓✓✓✓
-//✓✓✓✓✓✓✓✓✓✓✓✓✓✓                                          ✓✓✓✓✓✓✓✓✓✓✓✓✓
-//✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓                                        ✓✓✓✓✓✓✓✓✓✓✓✓✓✓
-//✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓                                     ✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
-//✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓      ✓                ✓      ✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
-//✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓                 ✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
-//✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓           ✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
-//✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
-//✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
-//✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
-
-
+/**
+✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
+✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
+✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓ ✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
+✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓         ✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
+✓✓✓✓✓✓✓✓✓                       ✓✓✓✓✓✓✓✓
+✓✓✓✓✓✓✓✓                         ✓✓✓✓✓✓✓
+✓✓✓✓✓✓✓✓                ✓✓       ✓✓✓✓✓✓✓
+✓✓✓✓✓                 ✓✓✓          ✓✓✓✓✓
+✓✓✓✓                 ✓✓✓            ✓✓✓✓
+✓✓✓✓✓          ✓✓  ✓✓✓             ✓✓✓✓✓
+✓✓✓✓✓✓✓✓         ✓✓✓             ✓✓✓✓✓✓✓
+✓✓✓✓✓✓✓✓                         ✓✓✓✓✓✓✓
+✓✓✓✓✓✓✓✓✓                       ✓✓✓✓✓✓✓✓
+✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓          ✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
+✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓ ✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
+✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
+@title  Checks
+@author VisualizeValue
+@notice This artwork is notable.
+*/
 contract Checks is IChecks, ERC721 {
+
+    /// @notice The VV Checks Edition contract
     IChecksEdition public editionChecks;
 
-    // Our DB
+    /// @dev We use this database for persistent storage.
     Checks checks;
 
+    /// @dev Initializes the Checks Originals contract and links the Edition contract.
     constructor() ERC721("Checks", "Check") {
-        // Link Checks to the Edition Contract
         editionChecks = IChecksEdition(0x34eEBEE6942d8Def3c125458D1a86e0A897fd6f9);
     }
 
+    /// @notice Migrate Checks Editions to Checks Originals by burning the Editions.
+    ///         Requires the Approval of this contract on the Edition contract.
+    /// @param tokenIds The token IDs you want to migrate.
     function mint(uint256[] calldata tokenIds) public {
         uint32 count = uint32(tokenIds.length);
 
@@ -59,22 +54,30 @@ contract Checks is IChecks, ERC721 {
 
         // Make sure all referenced Editions are owned by or approved to the minter.
         for (uint i = 0; i < count;) {
-            require(editionChecks.ownerOf(tokenIds[i]) == msg.sender, "Minter not the owner");
+            uint256 id = tokenIds[i];
+            address owner = editionChecks.ownerOf(id);
+
+            require(
+                owner == msg.sender ||
+                editionChecks.isApprovedForAll(owner, msg.sender) ||
+                editionChecks.getApproved(id) == msg.sender,
+                "Minter not the owner"
+            );
 
             unchecked { i++; }
         }
 
-        // We need a base seed for pseudo-randomization
+        // We need a base seed for pseudo-randomization.
         uint256 randomizer = Utils.seed(checks.minted);
 
         // Burn the Editions for the given tokenIds & mint the Originals.
         for (uint i = 0; i < count;) {
             uint256 id = tokenIds[i];
 
-            // Burn the edition
+            // Burn the edition.
             editionChecks.burn(id);
 
-            // Initialize Check
+            // Initialize our Check.
             StoredCheck storage check = checks.all[id];
             check.divisorIndex = 0;
 
@@ -139,6 +142,8 @@ contract Checks is IChecks, ERC721 {
         unchecked { checks.burned += uint32(pairs); }
     }
 
+    /// When one is released from the prison of self, that is indeed freedom.
+    /// For the greatest prison is the prison of self.
     function infinity(uint256[] calldata tokenIds) public {
         uint256 count = tokenIds.length;
         require(count == 64, "Final composite requires 64 single Checks");
