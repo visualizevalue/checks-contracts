@@ -101,34 +101,34 @@ describe('Checks', () => {
       expect(await checks.totalSupply()).to.equal(totalSupply - 63) // One survives
     })
 
-    it.only('Should allow to composite and render many originals', async () => {
+    it('Should allow to composite and render many originals', async () => {
       const { checks, vv } = await loadFixture(mintedFixture)
 
       const [singleId] = await composite(VV_TOKENS.slice(0, 64), checks, vv, 0, false)
       console.log('composited', singleId)
       await fetchAndRender(singleId, checks)
 
-      // const [fourId] = await composite(VV_TOKENS.slice(64, 96), checks, vv, 0, false)
-      // await fetchAndRender(fourId, checks)
+      const [fourId] = await composite(VV_TOKENS.slice(64, 96), checks, vv, 0, false)
+      await fetchAndRender(fourId, checks)
 
-      // const [fiveId] = await composite(VV_TOKENS.slice(96, 112), checks, vv, 0, false)
-      // await fetchAndRender(fiveId, checks)
+      const [fiveId] = await composite(VV_TOKENS.slice(96, 112), checks, vv, 0, false)
+      await fetchAndRender(fiveId, checks)
 
-      // const [tenId] = await composite(VV_TOKENS.slice(112, 120), checks, vv, 0, false)
-      // await fetchAndRender(tenId, checks)
+      const [tenId] = await composite(VV_TOKENS.slice(112, 120), checks, vv, 0, false)
+      await fetchAndRender(tenId, checks)
 
-      // const [twentyId] = await composite(VV_TOKENS.slice(120, 124), checks, vv, 0, false)
-      // await fetchAndRender(twentyId, checks)
+      const [twentyId] = await composite(VV_TOKENS.slice(120, 124), checks, vv, 0, false)
+      await fetchAndRender(twentyId, checks)
 
-      // const [fortyId] = await composite(VV_TOKENS.slice(124, 126), checks, vv, 0, false)
-      // await fetchAndRender(fortyId, checks)
+      const [fortyId] = await composite(VV_TOKENS.slice(124, 126), checks, vv, 0, false)
+      await fetchAndRender(fortyId, checks)
 
       await fetchAndRender(VV_TOKENS[126], checks)
     })
   })
 
   describe('Metadata', () => {
-    it.only('Should show correct metadata', async () => {
+    it('Should show correct metadata', async () => {
       const { checks, vv } = await loadFixture(mintedFixture)
 
       const uri = await checks.tokenURI(VV_TOKENS[0])

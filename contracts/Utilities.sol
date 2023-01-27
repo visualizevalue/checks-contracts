@@ -42,4 +42,20 @@ library Utils {
         }
         return string(bstr);
     }
+
+    function minGt0(uint8 one, uint8 two) public pure returns (uint8) {
+        return one > two
+            ? two > 0
+                ? two
+                : one
+            : two;
+    }
+
+    function min(uint8 one, uint8 two) public pure returns (uint8) {
+        return one < two ? one : two;
+    }
+
+    function avg(uint8 one, uint8 two) public pure returns (uint8) {
+        return (one & two) + (one ^ two) / 2;
+    }
 }

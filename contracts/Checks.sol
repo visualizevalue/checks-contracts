@@ -84,7 +84,7 @@ contract Checks is IChecks, ERC721 {
             // Check settings
             check.colorBands[0] = _band(Utils.random(seed + 2, 160));
             check.gradients[0] = _gradient(Utils.random(seed + 1, 100));
-            check.speed = uint8(Utils.random(seed + 3, 100));
+            check.animation = uint8(Utils.random(seed + 3, 100));
             check.seed = uint32(seed);
 
             // Mint the original
@@ -95,23 +95,6 @@ contract Checks is IChecks, ERC721 {
 
         // Keep track of how many checks have been minted
         unchecked { checks.minted += count; }
-    }
-
-    function _gradient(uint256 input) internal pure returns(uint8) {
-        return input < 80 ? 0
-             : input < 96 ? 1
-            //  : [2, 5, 8, 9, 10][input % 5];
-             : uint8(2 + (input % 5));
-    }
-
-    function _band(uint256 input) internal pure returns(uint8) {
-        return input > 80 ? 0
-             : input > 40 ? 1
-             : input > 20 ? 2
-             : input > 10 ? 3
-             : input >  8 ? 4
-             : input >  2 ? 5
-             : 6;
     }
 
     function getCheck(uint256 tokenId) public view returns (Check memory check) {
@@ -209,6 +192,22 @@ contract Checks is IChecks, ERC721 {
         return checks.minted - checks.burned;
     }
 
+    function _gradient(uint256 input) internal pure returns(uint8) {
+        return input < 80 ? 0
+             : input < 96 ? 1
+             : uint8(2 + (input % 5));
+    }
+
+    function _band(uint256 input) internal pure returns(uint8) {
+        return input > 80 ? 0
+             : input > 40 ? 1
+             : input > 20 ? 2
+             : input > 10 ? 3
+             : input >  8 ? 4
+             : input >  2 ? 5
+             : 6;
+    }
+
     function _multiTokenOperation(uint256[] calldata tokenIds, uint256[] calldata burnIds)
         internal pure returns (uint256 pairs)
     {
@@ -247,6 +246,7 @@ contract Checks is IChecks, ERC721 {
         toKeep.seed = toBurn.seed;
         toKeep.gradients[divisorIndex] = toBurn.gradients[divisorIndex];
         toKeep.colorBands[divisorIndex] = toBurn.colorBands[divisorIndex];
+        toKeep.animation = toBurn.animation;
 
         // Perform the burn
         _burn(burnId);
@@ -271,12 +271,12 @@ contract Checks is IChecks, ERC721 {
             uint256 randomizer = Utils.seed(checks.burned);
 
             // We take the smallest gradient, or continue as random checks
-            toKeep.gradients[toKeep.divisorIndex] = Utils.random(randomizer, 1, 100) > 80
-                ? _min(toKeep.gradients[divisorIndex], toBurn.gradients[divisorIndex])
-                : _minGt0(toKeep.gradients[divisorIndex], toBurn.gradients[divisorIndex]);
+            toKeep.gradients[toKeep.divisorIndex] = Utils.random(randomizer, 100) > 80
+                ? Utils.minGt0(toKeep.gradients[divisorIndex], toBurn.gradients[divisorIndex])
+                : Utils.min(toKeep.gradients[divisorIndex], toBurn.gradients[divisorIndex]);
 
             // We breed the lower end average color band when breeding
-            toKeep.colorBands[toKeep.divisorIndex] = _avg(
+            toKeep.colorBands[toKeep.divisorIndex] = Utils.avg(
                 toKeep.colorBands[divisorIndex],
                 toBurn.colorBands[divisorIndex]
             );
@@ -287,22 +287,5 @@ contract Checks is IChecks, ERC721 {
 
         // Notify composite
         emit IChecks.Composite(tokenId, burnId, ChecksArt.DIVISORS()[toKeep.divisorIndex]);
-    }
-
-    // TODO: Move to utilities
-    function _minGt0(uint8 one, uint8 two) internal pure returns (uint8) {
-        return one > two
-            ? two > 0
-                ? two
-                : one
-            : two;
-    }
-
-    function _min(uint8 one, uint8 two) internal pure returns (uint8) {
-        return one < two ? one : two;
-    }
-
-    function _avg(uint8 one, uint8 two) internal pure returns (uint8) {
-        return (one & two) + (one ^ two) / 2;
     }
 }

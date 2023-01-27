@@ -9,8 +9,7 @@ interface IChecks {
         uint8[6] colorBands;  // The length of the used color band in percent
         uint8[6] gradients;  // Gradient settings for each generation
         uint8 divisorIndex; // Easy access to next / previous divisor
-        uint8 direction;   // Animation direction
-        uint8 speed;      // Animation speed
+        uint8 animation;   // Animation seed
     }
 
     struct Check {

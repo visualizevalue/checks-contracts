@@ -70,7 +70,8 @@ library ChecksArt {
         check.composite = divisorIndex > 0 ? stored.composites[divisorIndex - 1] : 0;
         check.colorBand = hasManyChecks ? COLOR_BANDS()[stored.colorBands[divisorIndex]] : 1;
         check.gradient  = hasManyChecks ? stored.gradients[divisorIndex] : 0;
-        check.speed = stored.speed;
+        check.direction = uint8(stored.animation % 2);
+        check.speed = uint8(2**(stored.animation % 3));
 
         return check;
     }
@@ -136,17 +137,29 @@ library ChecksArt {
 
             // Replace random indices with parent / root color indices
             uint8 count = divisors[previousDivisor];
-            for (uint i = 0; i < checksCount; i++) {
-                uint256 branchIndex = indexes[i] % count;
-                indexes[i] = indexes[i] < count
-                    ? parentIndexes[branchIndex]
-                    : compositedIndexes[branchIndex];
-            }
 
-            // If we have a gradient we actually need extra treatment for checks following the initial one
-            if (gradient > 0) {
-                for (uint i = 1; i < checksCount; i++) {
+            // We always select the first color from our parent
+            uint256 initialBranchIndex = indexes[0] % count;
+            indexes[0] = indexes[0] < count
+                ? parentIndexes[initialBranchIndex]
+                : compositedIndexes[initialBranchIndex];
+
+            // If we don't have a gradient, we continue resolving from our parent for the remaining checks
+            if (gradient == 0) {
+                for (uint256 i = 0; i < checksCount;) {
+                    uint256 branchIndex = indexes[i] % count;
+                    indexes[i] = indexes[i] < count
+                        ? parentIndexes[branchIndex]
+                        : compositedIndexes[branchIndex];
+
+                    unchecked { i++; }
+                }
+            // If we have a gradient we base the remaining colors off our initial selection
+            } else {
+                for (uint256 i = 1; i < checksCount;) {
                     indexes[i] = (indexes[0] + (i * gradient * colorBand / checksCount) % colorBand) % 80;
+
+                    unchecked { i++; }
                 }
             }
         }
@@ -214,8 +227,19 @@ library ChecksArt {
         uint8 count = 20;
 
         bytes memory values;
-        for (uint i = offset; i < offset + 80; i+=4) {
-            values = abi.encodePacked(values, '#', allColors[i % 80], ';');
+
+        // Down
+        if (data.check.direction == 0) {
+            for (uint256 i = offset + 80; i > offset;) {
+                values = abi.encodePacked(values, '#', allColors[i % 80], ';');
+                unchecked { i-=4; }
+            }
+        // Up
+        } else {
+            for (uint256 i = offset; i < offset + 80;) {
+                values = abi.encodePacked(values, '#', allColors[i % 80], ';');
+                unchecked { i+=4; }
+            }
         }
 
         // Add initial color as last one for smooth animations
@@ -256,7 +280,6 @@ library ChecksArt {
             checksBytes = abi.encodePacked(checksBytes, abi.encodePacked(
                 '<g transform="translate(', translateX, ', ', translateY, ') scale(', data.scale, ')">',
                     '<use href="#check" fill="#',data.colors[i],'">',
-                    // '<use href="#square" transform="translate(-8, -7) scale(',checksCount > 20 ? '1' : '2',')" fill="#',data.colors[i],'">',
                         '<animate ',
                             'attributeName="fill" values="',animation,'" ',
                             'dur="',duration,'s" begin="animation.begin" ',
