@@ -85,8 +85,8 @@ contract Checks is IChecks, ERC721 {
             uint256 seed = (randomizer + id) % 4294967296;
 
             // Check settings.
-            check.colorBands[0] = _band(Utils.random(seed + 2, 160));
-            check.gradients[0] = _gradient(Utils.random(seed + 1, 100));
+            check.colorBands[0] = _band(Utils.random(seed + 1, 160));
+            check.gradients[0] = _gradient(Utils.random(seed + 2, 100));
             check.animation = uint8(Utils.random(seed + 3, 100));
             check.seed = uint32(seed);
 
@@ -121,7 +121,7 @@ contract Checks is IChecks, ERC721 {
     /// @param tokenIds The token IDs to transfer the art into.
     /// @param burnIds The token IDs to sacrifice.
     function inItForTheArts(uint256[] calldata tokenIds, uint256[] calldata burnIds) public {
-        uint256 pairs =_multiTokenOperation(tokenIds, burnIds);
+        uint256 pairs = _multiTokenOperation(tokenIds, burnIds);
 
         for (uint i = 0; i < pairs;) {
             _sacrifice(tokenIds[i], burnIds[i]);
@@ -145,7 +145,7 @@ contract Checks is IChecks, ERC721 {
     /// @param tokenIds The token IDs to keep alive. Their art will change.
     /// @param burnIds The token IDs to composite.
     function compositeMany(uint256[] calldata tokenIds, uint256[] calldata burnIds) public {
-        uint256 pairs =_multiTokenOperation(tokenIds, burnIds);
+        uint256 pairs = _multiTokenOperation(tokenIds, burnIds);
 
         for (uint i = 0; i < pairs;) {
             _composite(tokenIds[i], burnIds[i]);
@@ -188,6 +188,9 @@ contract Checks is IChecks, ERC721 {
         emit Infinity(blackCheckId, tokenIds[1:]);
     }
 
+    /// @notice Burn a check. Note: This burn does not composite or swap tokens.
+    /// @param tokenId The token ID to burn.
+    /// @dev A common purpose burn method.
     function burn(uint256 tokenId) external virtual {
         require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC721: caller is not token owner or approved");
         _burn(tokenId);
@@ -195,33 +198,48 @@ contract Checks is IChecks, ERC721 {
         unchecked { checks.minted--; }
     }
 
+    /// @notice Get the colors of all checks in a given token.
+    /// @param tokenId The token ID to get colors for.
+    /// @dev Consider using the ChecksArt and EightyColors Libraries
+    ///      in combination with the getCheck function to resolve this yourself.
     function colors(uint256 tokenId) external view returns (string[] memory, uint256[] memory)
     {
         return ChecksArt.colors(ChecksArt.getCheck(tokenId, checks), checks);
     }
 
+    /// @notice Render the SVG for a given token.
+    /// @param tokenId The token to render.
+    /// @dev Consider using the ChecksArt Library directly.
     function svg(uint256 tokenId) external view returns (string memory) {
         _requireMinted(tokenId);
 
         return string(ChecksArt.generateSVG(tokenId, checks));
     }
 
+    /// @notice Get the metadata for a given token.
+    /// @param tokenId The token to render.
+    /// @dev Consider using the ChecksMetadata Library directly.
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
         _requireMinted(tokenId);
 
         return ChecksMetadata.tokenURI(tokenId, checks);
     }
 
+    /// @notice Returns how many tokens this contract currently manages.
     function totalSupply() public view returns (uint256) {
         return checks.minted - checks.burned;
     }
 
+    /// @dev Get the index for a token gradient based on a number between 1 and 100.
+    /// @param input The pseudorandom input to base the index on.
     function _gradient(uint256 input) internal pure returns(uint8) {
         return input < 80 ? 0
              : input < 96 ? 1
              : uint8(2 + (input % 5));
     }
 
+    /// @dev Get the index for a token color band based on a number between 1 and 160.
+    /// @param input The pseudorandom input to base the index on.
     function _band(uint256 input) internal pure returns(uint8) {
         return input > 80 ? 0
              : input > 40 ? 1
@@ -232,6 +250,9 @@ contract Checks is IChecks, ERC721 {
              : 6;
     }
 
+    /// @dev Make sure this is a valid request to composite/switch with multiple tokens.
+    /// @param tokenIds The token IDs to keep.
+    /// @param burnIds The token IDs to burn.
     function _multiTokenOperation(uint256[] calldata tokenIds, uint256[] calldata burnIds)
         internal pure returns (uint256 pairs)
     {
@@ -239,6 +260,9 @@ contract Checks is IChecks, ERC721 {
         require(pairs == burnIds.length, "Invalid number of tokens to composite");
     }
 
+    /// @dev Make sure this is a valid request to composite/switch a token pair.
+    /// @param tokenId The token ID to keep.
+    /// @param burnId The token ID to burn.
     function _tokenOperation(uint256 tokenId, uint256 burnId)
         internal view returns (
             StoredCheck storage toKeep,
@@ -260,6 +284,9 @@ contract Checks is IChecks, ERC721 {
         require(divisorIndex < 6, "Operation on single checks");
     }
 
+    /// @dev Sacrifice one token to transfer its art to another.
+    /// @param tokenId The token ID to keep.
+    /// @param burnId The token ID to burn.
     function _sacrifice(uint256 tokenId, uint256 burnId) internal {
         (
             StoredCheck storage toKeep,
@@ -272,13 +299,18 @@ contract Checks is IChecks, ERC721 {
         toKeep.colorBands[divisorIndex] = toBurn.colorBands[divisorIndex];
         toKeep.animation = toBurn.animation;
 
-        // Perform the burn
+        // TODO: Copy over all parent gradient & band settings as well.
+
+        // Perform the burn.
         _burn(burnId);
 
-        // Notify replace
+        // Notify DAPPs about the Sacrifice.
         emit IChecks.Sacrifice(burnId, tokenId);
     }
 
+    /// @dev Composite one token into to another and burn it.
+    /// @param tokenId The token ID to keep. Its art and check-count will change.
+    /// @param burnId The token ID to burn in the process.
     function _composite(uint256 tokenId, uint256 burnId) internal {
         (
             StoredCheck storage toKeep,
@@ -291,25 +323,27 @@ contract Checks is IChecks, ERC721 {
         toKeep.divisorIndex += 1;
 
         if (toKeep.divisorIndex < 6) {
-            // Need a randomizer for gene manipulation
+            // Need a randomizer for gene manipulation.
             uint256 randomizer = Utils.seed(checks.burned);
 
-            // We take the smallest gradient, or continue as random checks
+            // We take the smallest gradient in 20% of cases, or continue as random checks.
             toKeep.gradients[toKeep.divisorIndex] = Utils.random(randomizer, 100) > 80
                 ? Utils.minGt0(toKeep.gradients[divisorIndex], toBurn.gradients[divisorIndex])
                 : Utils.min(toKeep.gradients[divisorIndex], toBurn.gradients[divisorIndex]);
 
-            // We breed the lower end average color band when breeding
+            // We breed the lower end average color band when breeding.
             toKeep.colorBands[toKeep.divisorIndex] = Utils.avg(
                 toKeep.colorBands[divisorIndex],
                 toBurn.colorBands[divisorIndex]
             );
+
+            // TODO: Breed animation settings
         }
 
-        // Perform the burn
+        // Perform the burn.
         _burn(burnId);
 
-        // Notify composite
+        // Notify DAPPs about the Composite.
         emit IChecks.Composite(tokenId, burnId, ChecksArt.DIVISORS()[toKeep.divisorIndex]);
     }
 }
