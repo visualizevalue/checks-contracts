@@ -63,7 +63,24 @@ describe('Checks', () => {
   })
 
   describe('Burning', () => {
-    it('Should allow holders to just burn their tokens', async () => {
+    it('Should not allow non approved operators to burn tokens', async () => {
+      const { checks } = await loadFixture(mintedFixture)
+
+      await expect(checks.burn(VV_TOKENS[0]))
+        .to.be.revertedWith('ERC721: caller is not token owner or approved')
+    })
+
+    it('Should allow holders to burn their tokens', async () => {
+      const { checks, vv } = await loadFixture(mintedFixture)
+
+      const id = VV_TOKENS[0]
+
+      await expect(checks.connect(vv).burn(id))
+        .to.emit(checks, 'Transfer')
+        .withArgs(vv.address, ethers.constants.AddressZero, id)
+    })
+
+    it('Should properly track total supply when users burn burn their tokens', async () => {
       const { checks, vv } = await loadFixture(mintedFixture)
 
       expect(await checks.totalSupply()).to.equal(135)
