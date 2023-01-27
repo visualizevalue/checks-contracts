@@ -313,20 +313,23 @@ library ChecksArt {
         return string(checksBytes);
     }
 
+    /// @dev Collect relevant rendering data for easy access across functions.
+    /// @param check Our current check loaded from storage.
+    /// @param checks The DB containing all checks.
     function collectRenderData(
         IChecks.Check memory check, IChecks.Checks storage checks
     ) public view returns (CheckRenderData memory data) {
-        // Carry over the check
+        // Carry through base settings.
         data.check = check;
         data.count = DIVISORS()[check.stored.divisorIndex];
 
-        // Colors
+        // Compute colors and indexes.
         (string[] memory colors_, uint256[] memory colorIndexes_) = colors(check, checks);
         data.colorIndexes = colorIndexes_;
         data.colors = colors_;
         data.gridColor = data.count > 0 ? '#191919' : '#F2F2F2';
 
-        // Positioning
+        // Compute positioning data.
         data.scale = data.count > 20 ? '1' : data.count > 1 ? '2' : '3';
         data.spaceX = data.count == 80 ? 36 : 72;
         data.spaceY = data.count > 20 ? 36 : 72;
@@ -336,6 +339,7 @@ library ChecksArt {
         data.rowY = rowY(data.count);
     }
 
+    /// @dev Generate the SVG code for rows in the 8x10 Checks grid.
     function generateGridRow() public pure returns (bytes memory) {
         bytes memory row;
         for (uint i = 0; i < 8; i++) {
@@ -347,6 +351,7 @@ library ChecksArt {
         return row;
     }
 
+    /// @dev Generate the SVG code for the entire 8x10 Checks grid.
     function generateGrid() public pure returns (bytes memory) {
         bytes memory grid;
         for (uint i = 0; i < 10; i++) {
@@ -359,6 +364,9 @@ library ChecksArt {
         return abi.encodePacked('<g id="grid" x="196" y="160">', grid, '</g>');
     }
 
+    /// @dev Generate the complete SVG code for a given Check.
+    /// @param tokenId The ID of the token to render.
+    /// @param checks The DB containing all checks.
     function generateSVG(
         uint256 tokenId, IChecks.Checks storage checks
     ) public view returns (bytes memory) {
@@ -395,6 +403,7 @@ library ChecksArt {
     }
 }
 
+/// @dev Bag holding all data relevant for rendering.
 struct CheckRenderData {
     IChecks.Check check;
     uint256[] colorIndexes;
