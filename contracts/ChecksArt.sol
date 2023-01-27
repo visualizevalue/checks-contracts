@@ -5,27 +5,6 @@ import "./EightyColors.sol";
 import "./Utilities.sol";
 import "./IChecks.sol";
 
-import "hardhat/console.sol";
-
-struct CheckRenderData {
-    IChecks.Check check;
-    uint256[] colorIndexes;
-    string[] colors;
-    string gridColor;
-    string duration;
-    string scale;
-    uint32 seed;
-    uint16 rowX;
-    uint16 rowY;
-    uint8 count;
-    uint8 spaceX;
-    uint8 spaceY;
-    uint8 perRow;
-    uint8 indexInRow;
-    uint8 isIndented;
-    bool indent;
-    bool isNewRow;
-}
 
 /////////   VV CHECKS   /////////
 //                             //
@@ -43,6 +22,8 @@ struct CheckRenderData {
 //                             //
 //                             //
 /////  VERIFY, DON'T TRUST   ////
+
+
 library ChecksArt {
     string public constant CHECKS_PATH = 'M21.36 9.886A3.933 3.933 0 0 0 18 8c-1.423 0-2.67.755-3.36 1.887a3.935 3.935 0 0 0-4.753 4.753A3.933 3.933 0 0 0 8 18c0 1.423.755 2.669 1.886 3.36a3.935 3.935 0 0 0 4.753 4.753 3.933 3.933 0 0 0 4.863 1.59 3.953 3.953 0 0 0 1.858-1.589 3.935 3.935 0 0 0 4.753-4.754A3.933 3.933 0 0 0 28 18a3.933 3.933 0 0 0-1.887-3.36 3.934 3.934 0 0 0-1.042-3.711 3.934 3.934 0 0 0-3.71-1.043Zm-3.958 11.713 4.562-6.844c.566-.846-.751-1.724-1.316-.878l-4.026 6.043-1.371-1.368c-.717-.722-1.836.396-1.116 1.116l2.17 2.15a.788.788 0 0 0 1.097-.22Z';
 
@@ -63,13 +44,13 @@ library ChecksArt {
     ) public view returns (IChecks.Check memory check) {
         IChecks.StoredCheck memory stored = checks.all[tokenId];
         uint8 divisorIndex = stored.divisorIndex;
-        bool hasManyChecks = divisorIndex < 6;
 
         check.stored = stored;
+        check.hasManyChecks = divisorIndex < 6;
         check.checksCount = DIVISORS()[divisorIndex];
         check.composite = divisorIndex > 0 ? stored.composites[divisorIndex - 1] : 0;
-        check.colorBand = hasManyChecks ? COLOR_BANDS()[stored.colorBands[divisorIndex]] : 1;
-        check.gradient  = hasManyChecks ? stored.gradients[divisorIndex] : 0;
+        check.colorBand = check.hasManyChecks ? COLOR_BANDS()[stored.colorBands[divisorIndex]] : 1;
+        check.gradient  = check.hasManyChecks ? stored.gradients[divisorIndex] : 0;
         check.direction = uint8(stored.animation % 2);
         check.speed = uint8(2**(stored.animation % 3));
 
@@ -100,7 +81,7 @@ library ChecksArt {
         indexes[0] = Utils.random(seed, possibleColorChoices - 1);
 
         // If we have more than one check, continue selecting colors
-        if (divisorIndex < 6) {
+        if (check.hasManyChecks) {
             if (gradient > 0) {
                 // If we're a gradient check, we select based on the color band looping around
                 // the 80 possible colors
@@ -344,8 +325,6 @@ library ChecksArt {
     ) public view returns (bytes memory) {
         CheckRenderData memory data = collectRenderData(getCheck(tokenId, checks), checks);
 
-        console.log(tokenId);
-
         return abi.encodePacked(
             '<svg ',
                 'viewBox="0 0 680 680" ',
@@ -375,4 +354,24 @@ library ChecksArt {
             '</svg>'
         );
     }
+}
+
+struct CheckRenderData {
+    IChecks.Check check;
+    uint256[] colorIndexes;
+    string[] colors;
+    string gridColor;
+    string duration;
+    string scale;
+    uint32 seed;
+    uint16 rowX;
+    uint16 rowY;
+    uint8 count;
+    uint8 spaceX;
+    uint8 spaceY;
+    uint8 perRow;
+    uint8 indexInRow;
+    uint8 isIndented;
+    bool indent;
+    bool isNewRow;
 }

@@ -15,9 +15,9 @@ library Utils {
     }
 
     /// @dev Pseudorandom number based on input within bounds
-    function random(uint256 input, uint256 min, uint256 max) public pure returns (uint256) {
-        uint256 randRange = max - min;
-        return max - (uint256(keccak256(abi.encodePacked(input))) % randRange) - 1;
+    function random(uint256 input, uint256 from, uint256 to) public pure returns (uint256) {
+        uint256 randRange = to - from;
+        return to - (uint256(keccak256(abi.encodePacked(input))) % randRange) - 1;
     }
 
     /// @dev Convert an integer to a string
