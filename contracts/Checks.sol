@@ -45,7 +45,7 @@ contract Checks is IChecks, ERC721 {
 
     /// @notice Migrate Checks Editions to Checks Originals by burning the Editions.
     ///         Requires the Approval of this contract on the Edition contract.
-    /// @param tokenIds The token IDs you want to migrate.
+    /// @param tokenIds The Edition token IDs you want to migrate.
     function mint(uint256[] calldata tokenIds) public {
         uint32 count = uint32(tokenIds.length);
 
@@ -81,37 +81,45 @@ contract Checks is IChecks, ERC721 {
             StoredCheck storage check = checks.all[id];
             check.divisorIndex = 0;
 
-            // Randomized input with a uint32 as max value
+            // Randomized input with a uint32 max value.
             uint256 seed = (randomizer + id) % 4294967296;
 
-            // Check settings
+            // Check settings.
             check.colorBands[0] = _band(Utils.random(seed + 2, 160));
             check.gradients[0] = _gradient(Utils.random(seed + 1, 100));
             check.animation = uint8(Utils.random(seed + 3, 100));
             check.seed = uint32(seed);
 
-            // Mint the original
+            // Mint the original.
             _mint(msg.sender, id);
 
             unchecked { i++; }
         }
 
-        // Keep track of how many checks have been minted
+        // Keep track of how many checks have been minted.
         unchecked { checks.minted += count; }
     }
 
+    /// @notice Get a specific check with its genome settings.
+    /// @param tokenId The token ID to fetch.
     function getCheck(uint256 tokenId) public view returns (Check memory check) {
         _requireMinted(tokenId);
 
         return ChecksArt.getCheck(tokenId, checks);
     }
 
+    /// @notice Sacrifice a token to transfer its visual representation to another token.
+    /// @param tokenId The token ID transfer the art into.
+    /// @param burnId The token ID to sacrifice.
     function inItForTheArt(uint256 tokenId, uint256 burnId) public {
         _sacrifice(tokenId, burnId);
 
         unchecked { checks.burned ++; }
     }
 
+    /// @notice Sacrifice multiple tokens to transfer their visual to other tokens.
+    /// @param tokenIds The token IDs to transfer the art into.
+    /// @param burnIds The token IDs to sacrifice.
     function inItForTheArts(uint256[] calldata tokenIds, uint256[] calldata burnIds) public {
         uint256 pairs =_multiTokenOperation(tokenIds, burnIds);
 
@@ -124,12 +132,18 @@ contract Checks is IChecks, ERC721 {
         unchecked { checks.burned += uint32(pairs); }
     }
 
+    /// @notice Composite one token into another. This mixes the visual and reduces the number of checks.
+    /// @param tokenId The token ID to keep alive. Its visual will change.
+    /// @param burnId The token ID to composite into the tokenId.
     function composite(uint256 tokenId, uint256 burnId) public {
         _composite(tokenId, burnId);
 
         unchecked { checks.burned ++; }
     }
 
+    /// @notice Composite multiple tokens. This mixes the visuals and checks in remaining tokens.
+    /// @param tokenIds The token IDs to keep alive. Their art will change.
+    /// @param burnIds The token IDs to composite.
     function compositeMany(uint256[] calldata tokenIds, uint256[] calldata burnIds) public {
         uint256 pairs =_multiTokenOperation(tokenIds, burnIds);
 
@@ -142,8 +156,9 @@ contract Checks is IChecks, ERC721 {
         unchecked { checks.burned += uint32(pairs); }
     }
 
-    /// When one is released from the prison of self, that is indeed freedom.
-    /// For the greatest prison is the prison of self.
+    /// @notice Sacrifice 64 single-check tokens to form a black check.
+    /// @param tokenIds The token IDs to burn for the black check.
+    /// @dev The check at index 0 survives.
     function infinity(uint256[] calldata tokenIds) public {
         uint256 count = tokenIds.length;
         require(count == 64, "Final composite requires 64 single Checks");
@@ -167,8 +182,9 @@ contract Checks is IChecks, ERC721 {
             unchecked { i++; }
         }
 
-        // Notify final composite.
-        emit Infinity(id, tokenIds[1:]);
+        // When one is released from the prison of self, that is indeed freedom.
+        // For the most great prison is the prison of self.
+        emit Infinity(blackCheckId, tokenIds[1:]);
     }
 
     function burn(uint256 tokenId) external virtual {
