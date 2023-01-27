@@ -342,7 +342,8 @@ contract Checks is IChecks, ERC721 {
                 toBurn.colorBands[divisorIndex]
             );
 
-            // TODO: Breed animation settings
+            // Coin-toss keep either one or the other animation setting.
+            toKeep.animation = randomizer % 2 == 1 ? toKeep.animation : toBurn.animation;
         }
 
         // Perform the burn.
