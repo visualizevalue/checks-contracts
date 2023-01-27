@@ -4,7 +4,7 @@ import { deployChecks } from './fixtures/deploy'
 import { impersonateAccounts } from './fixtures/impersonate'
 import { mintedFixture } from './fixtures/mint'
 import { composite } from '../helpers/composite'
-import { JALIL, VV, VV_TOKENS } from '../helpers/constants'
+import { JALIL, JALIL_TOKENS, VV, VV_TOKENS } from '../helpers/constants'
 import { fetchAndRender, render } from '../helpers/render'
 const { expect } = require('chai')
 const hre = require('hardhat')
@@ -83,9 +83,9 @@ describe('Checks', () => {
     it('Should properly track total supply when users burn burn their tokens', async () => {
       const { checks, vv } = await loadFixture(mintedFixture)
 
-      expect(await checks.totalSupply()).to.equal(135)
-      await checks.connect(vv).burn(VV_TOKENS[0])
       expect(await checks.totalSupply()).to.equal(134)
+      await checks.connect(vv).burn(VV_TOKENS[0])
+      expect(await checks.totalSupply()).to.equal(133)
     })
   })
 
@@ -137,15 +137,37 @@ describe('Checks', () => {
   })
 
   describe('Compositing', () => {
+    it('Should not allow people to composit tokens of other users', async () => {
+      const { checks } = await loadFixture(mintedFixture)
+
+      const [toKeep, toBurn] = VV_TOKENS.slice(0, 2)
+      await expect(checks.composite(toKeep, toBurn))
+        .to.be.revertedWith('Not the owner or approved')
+    })
+
+    it('Should allow people to swap approved tokens', async () => {
+      const { checks, vv, jalil } = await loadFixture(mintedFixture)
+      const [toKeep, toBurn] = VV_TOKENS.slice(0, 2)
+
+      await expect(checks.connect(jalil).composite(toKeep, toBurn))
+        .to.be.reverted
+
+      await checks.connect(vv).setApprovalForAll(jalil.address, true)
+
+      await expect(checks.connect(jalil).composite(toKeep, toBurn))
+        .to.emit(checks, 'Composite')
+        .withArgs(toKeep, toBurn, 40)
+    })
+
     it('Should allow to composite originals', async () => {
       const { checks, vv } = await loadFixture(mintedFixture)
 
-      expect(await checks.totalSupply()).to.equal(135)
+      expect(await checks.totalSupply()).to.equal(134)
 
       const [toKeep, toBurn] = VV_TOKENS.slice(0, 2)
       await checks.connect(vv).composite(toKeep, toBurn)
 
-      expect(await checks.totalSupply()).to.equal(134)
+      expect(await checks.totalSupply()).to.equal(133)
 
       const check = await checks.getCheck(toKeep)
 
@@ -158,7 +180,7 @@ describe('Checks', () => {
       const { checks, vv } = await loadFixture(mintedFixture)
 
       const totalSupply = await checks.totalSupply()
-      expect(totalSupply).to.equal(135)
+      expect(totalSupply).to.equal(134)
 
       await composite(VV_TOKENS.slice(0, 64), checks, vv)
 
@@ -169,7 +191,6 @@ describe('Checks', () => {
       const { checks, vv } = await loadFixture(mintedFixture)
 
       const [singleId] = await composite(VV_TOKENS.slice(0, 64), checks, vv, 0, false)
-      console.log('composited', singleId)
       await fetchAndRender(singleId, checks)
 
       const [fourId] = await composite(VV_TOKENS.slice(64, 96), checks, vv, 0, false)
@@ -187,7 +208,7 @@ describe('Checks', () => {
       const [fortyId] = await composite(VV_TOKENS.slice(124, 126), checks, vv, 0, false)
       await fetchAndRender(fortyId, checks)
 
-      await fetchAndRender(VV_TOKENS[126], checks)
+      await fetchAndRender(JALIL_TOKENS[0], checks)
     })
   })
 
@@ -203,7 +224,6 @@ describe('Checks', () => {
 
       const [singleId] = await composite(VV_TOKENS.slice(2, 66), checks, vv, 0, false)
       fs.writeFileSync(`test/dist/tokenuri-${singleId}`, await checks.tokenURI(singleId))
-      console.log(await checks.getCheck(singleId))
     })
   })
 })
