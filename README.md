@@ -44,3 +44,12 @@ npx hardhat verify --network ropsten DEPLOYED_CONTRACT_ADDRESS "Hello, Hardhat!"
 # Performance optimizations
 
 For faster runs of your tests and scripts, consider skipping ts-node's type checking by setting the environment variable `TS_NODE_TRANSPILE_ONLY` to `1` in hardhat's environment. For more details see [the documentation](https://hardhat.org/guides/typescript.html#performance-optimizations).
+
+
+# Contracts
+
+## Mainnet
+- Checks Editions: `0x34eEBEE6942d8Def3c125458D1a86e0A897fd6f9`
+
+## Goerli
+- Checks Editions: `0x1c3F1129B7E90B52c7A83d9AB9CC389543C1eA77`
