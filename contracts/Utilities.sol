@@ -14,12 +14,6 @@ library Utils {
         return max - (uint256(keccak256(abi.encodePacked(input))) % max);
     }
 
-    /// @dev Pseudorandom number based on input within bounds
-    function random(uint256 input, uint256 from, uint256 to) public pure returns (uint256) {
-        uint256 randRange = to - from;
-        return to - (uint256(keccak256(abi.encodePacked(input))) % randRange) - 1;
-    }
-
     /// @dev Convert an integer to a string
     function uint2str(uint256 _i) public pure returns (string memory _uintAsString) {
         if (_i == 0) {
@@ -43,6 +37,7 @@ library Utils {
         return string(bstr);
     }
 
+    /// @dev Get the smallest non zero number
     function minGt0(uint8 one, uint8 two) public pure returns (uint8) {
         return one > two
             ? two > 0
@@ -51,10 +46,12 @@ library Utils {
             : two;
     }
 
+    /// @dev Get the smallest number
     function min(uint8 one, uint8 two) public pure returns (uint8) {
         return one < two ? one : two;
     }
 
+    /// @dev Get the average between two numbers
     function avg(uint8 one, uint8 two) public pure returns (uint8) {
         return (one & two) + (one ^ two) / 2;
     }
