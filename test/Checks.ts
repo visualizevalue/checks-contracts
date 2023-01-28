@@ -2,10 +2,10 @@ import fs from 'fs'
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers'
 import { deployChecks } from './fixtures/deploy'
 import { impersonateAccounts } from './fixtures/impersonate'
-import { mintedFixture } from './fixtures/mint'
+import { blackCheckFixture, mintedFixture } from './fixtures/mint'
 import { composite } from '../helpers/composite'
 import { JALIL, JALIL_TOKENS, VV, VV_TOKENS } from '../helpers/constants'
-import { fetchAndRender, render } from '../helpers/render'
+import { fetchAndRender } from '../helpers/render'
 const { expect } = require('chai')
 const hre = require('hardhat')
 const ethers = hre.ethers
@@ -209,6 +209,18 @@ describe('Checks', () => {
       await fetchAndRender(fortyId, checks)
 
       await fetchAndRender(JALIL_TOKENS[0], checks)
+    })
+
+    it.skip('Should allow to composite to, mint, and render the black check', async () => {
+      const { checks, blackCheck, allTokens } = await loadFixture(blackCheckFixture)
+
+      console.log(`      Created the first black check with ID #${blackCheck}`)
+      await fetchAndRender(blackCheck, checks)
+      console.log(`      Rendered the first black check`)
+      fs.writeFileSync(`test/dist/tokenuri-${blackCheck}`, await checks.tokenURI(blackCheck))
+      console.log(`      Saved black check metadata`)
+
+      expect(await checks.totalSupply()).to.equal(allTokens.length - 64 * 64 + 1)
     })
   })
 
