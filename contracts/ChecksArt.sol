@@ -62,7 +62,7 @@ library ChecksArt {
         check.stored = stored;
         check.hasManyChecks = divisorIndex < 6;
         check.checksCount = DIVISORS()[divisorIndex];
-        check.composite = divisorIndex > 0 ? stored.composites[divisorIndex - 1] : 0;
+        check.composite = divisorIndex > 0 && divisorIndex < 7 ? stored.composites[divisorIndex - 1] : 0;
         check.colorBand = check.hasManyChecks ? COLOR_BANDS()[stored.colorBands[divisorIndex]] : 1;
         check.gradient  = check.hasManyChecks ? GRADIENTS()[stored.gradients[divisorIndex]] : 0;
         check.direction = uint8(stored.animation % 2);
@@ -173,9 +173,11 @@ library ChecksArt {
     ) public view returns (string[] memory, uint256[] memory) {
         // A fully composited check has no color.
         if (check.stored.divisorIndex == 7) {
-            string[] memory zeroColors;
-            zeroColors[0] = '#FFF';
-            return (zeroColors, new uint256[](999));
+            string[] memory zeroColors = new string[](1);
+            uint256[] memory zeroIndexes = new uint256[](1);
+            zeroColors[0] = '000';
+            zeroIndexes[0] = 999;
+            return (zeroColors, zeroIndexes);
         }
 
         // Fetch the indices on the original color mapping.
@@ -230,7 +232,7 @@ library ChecksArt {
                 : 286;
     }
 
-    /// @dev Get the animation for an individual check of a piece.
+    /// @dev Get the animation SVG snipped for an individual check of a piece.
     /// @param data The data object containing rendering settings.
     /// @param offset The index position of the check in question.
     /// @param allColors All available colors.
@@ -238,8 +240,12 @@ library ChecksArt {
         CheckRenderData memory data,
         uint256 offset,
         string[80] memory allColors
-    ) public pure returns (string memory duration, string memory animation)
+    ) public pure returns (bytes memory)
     {
+        if (data.isBlack) {
+            return '';
+        }
+
         // We only pick 20 colors from our gradient to reduce execution time.
         uint8 count = 20;
 
@@ -262,13 +268,19 @@ library ChecksArt {
         // Add initial color as last one for smooth animations.
         values = abi.encodePacked(values, '#', allColors[offset]);
 
-        // Also compute the duration for the animation.
-        return (Utils.uint2str(count * 2 / data.check.speed), string(values));
+        // Render the SVG snipped for the animation
+        return abi.encodePacked(
+            '<animate ',
+                'attributeName="fill" values="',values,'" ',
+                'dur="',Utils.uint2str(count * 2 / data.check.speed),'s" begin="animation.begin" ',
+                'repeatCount="indefinite" ',
+            '/>'
+        );
     }
 
     /// @dev Generate the SVG code for all checks in a given token.
     /// @param data The data object containing rendering settings.
-    function generateChecks(CheckRenderData memory data) public pure returns (string memory) {
+    function generateChecks(CheckRenderData memory data) public pure returns (bytes memory) {
         bytes memory checksBytes;
         string[80] memory allColors = EightyColors.COLORS();
 
@@ -294,23 +306,17 @@ library ChecksArt {
             string memory translateX = Utils.uint2str(data.rowX + data.indexInRow * data.spaceX);
             string memory translateY = Utils.uint2str(data.rowY);
 
-            // Load the animation for this check.
-            (string memory duration, string memory animation) = fillAnimation(data, data.colorIndexes[i], allColors);
-
+            // Render the current check.
             checksBytes = abi.encodePacked(checksBytes, abi.encodePacked(
                 '<g transform="translate(', translateX, ', ', translateY, ') scale(', data.scale, ')">',
-                    '<use href="#check" fill="#',data.colors[i],'">',
-                        '<animate ',
-                            'attributeName="fill" values="',animation,'" ',
-                            'dur="',duration,'s" begin="animation.begin" ',
-                            'repeatCount="indefinite" ',
-                        '/>',
+                    '<use href="#check" fill="#', data.colors[i], '">',
+                        fillAnimation(data, data.colorIndexes[i], allColors),
                     '</use>'
                 '</g>'
             ));
         }
 
-        return string(checksBytes);
+        return checksBytes;
     }
 
     /// @dev Collect relevant rendering data for easy access across functions.
@@ -321,13 +327,15 @@ library ChecksArt {
     ) public view returns (CheckRenderData memory data) {
         // Carry through base settings.
         data.check = check;
-        data.count = DIVISORS()[check.stored.divisorIndex];
+        data.isBlack = check.stored.divisorIndex == 7;
+        data.count = data.isBlack ? 1 : DIVISORS()[check.stored.divisorIndex];
 
         // Compute colors and indexes.
         (string[] memory colors_, uint256[] memory colorIndexes_) = colors(check, checks);
         data.colorIndexes = colorIndexes_;
         data.colors = colors_;
-        data.gridColor = data.count > 0 ? '#191919' : '#F2F2F2';
+        data.gridColor = data.isBlack ? '#F2F2F2' : '#191919';
+        data.canvasColor = data.isBlack ? '#FFF' : '#111';
 
         // Compute positioning data.
         data.scale = data.count > 20 ? '1' : data.count > 1 ? '2' : '3';
@@ -345,7 +353,7 @@ library ChecksArt {
         for (uint i = 0; i < 8; i++) {
             row = abi.encodePacked(
                 row,
-                '<use href="#square" x="',Utils.uint2str(196 + i*36),'" y="160"/>'
+                '<use href="#square" x="', Utils.uint2str(196 + i*36), '" y="160"/>'
             );
         }
         return row;
@@ -379,12 +387,12 @@ library ChecksArt {
                 'style="width:100%;background:black;"',
             '>',
                 '<defs>',
-                    '<path id="check" fill-rule="evenodd" d="',CHECKS_PATH,'"></path>',
-                    '<rect id="square" width="36" height="36" stroke="',data.gridColor,'"></rect>',
-                    '<g id="row">', generateGridRow(),'</g>'
+                    '<path id="check" fill-rule="evenodd" d="', CHECKS_PATH, '"></path>',
+                    '<rect id="square" width="36" height="36" stroke="', data.gridColor, '"></rect>',
+                    '<g id="row">', generateGridRow(), '</g>'
                 '</defs>',
                 '<rect width="680" height="680" fill="black"/>',
-                '<rect x="188" y="152" width="304" height="376" fill="#111111"/>',
+                '<rect x="188" y="152" width="304" height="376" fill="', data.canvasColor, '"/>',
                 generateGrid(),
                 generateChecks(data),
                 '<rect width="680" height="680" fill="transparent">',
@@ -408,6 +416,7 @@ struct CheckRenderData {
     IChecks.Check check;
     uint256[] colorIndexes;
     string[] colors;
+    string canvasColor;
     string gridColor;
     string duration;
     string scale;
@@ -422,4 +431,5 @@ struct CheckRenderData {
     uint8 isIndented;
     bool indent;
     bool isNewRow;
+    bool isBlack;
 }
