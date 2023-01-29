@@ -23,7 +23,18 @@ export const composite = async (
     }
   }
 
-  await checks.connect(signer).compositeMany(toKeep, toBurn)
+  try {
+    const tx = await checks.connect(signer).compositeMany(toKeep, toBurn, {
+      gasLimit: (await checks.connect(signer).estimateGas.compositeMany(toKeep, toBurn)).mul(2)
+    })
+
+    if (toKeep.length == 1) {
+      console.log(`Waiting for current batch of tx...`)
+      await tx.wait()
+    }
+  } catch (e) {
+    console.log(e.reason || 'fail')
+  }
 
   if (toKeep.length > 1 && divisor > 0) {
     return composite(toKeep, checks, signer, divisorIndex + 1, save)

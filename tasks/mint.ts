@@ -1,3 +1,4 @@
+import { Wallet } from 'ethers'
 import { task } from 'hardhat/config'
 import { EDITIONS, VV, VV_TOKENS } from '../helpers/constants'
 import { impersonate } from '../helpers/impersonate'
@@ -19,4 +20,28 @@ task('mint-testing', 'Mint VV tokens')
     await checks.connect(vv).mint(VV_TOKENS)
 
     console.log(`Minted all ${VV_TOKENS.length} Checks Originals`)
+  })
+
+task('mint-live', 'Mint original checks tokens')
+  .addParam('contract', 'The Checks Contract address')
+  .addParam('from', 'The min token ID (inclusive)')
+  .addParam('to', 'The max token ID (inclusive)')
+  .setAction(async ({ contract, from, to }, hre) => {
+    const signer = new Wallet(process.env.SIGNER_PK || '', hre.ethers.provider)
+    const checks = await hre.ethers.getContractAt('Checks', contract)
+
+    const tokens = [...Array(parseInt(to) - parseInt(from) + 1).keys()].map(t => t + parseInt(from))
+
+    for (let i = 0; i < tokens.length; i+=100) {
+      const ids = tokens.slice(i, i + 100)
+      const tx = await checks.connect(signer).mint(ids, {
+        gasLimit: 20_000_000,
+      })
+      console.log(`Minted original check ${tokens[i]} - ${tokens[i + 100 - 1]}`)
+
+      if (i > 0 && i % 500 === 0) {
+        console.log(`Waiting for tx batch`)
+        await tx.wait()
+      }
+    }
   })
