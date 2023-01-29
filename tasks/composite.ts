@@ -48,5 +48,5 @@ task('composite-live', 'Composite VV tokens')
       composited += 64
     }
 
-    console.log(`Single tokens: ${JSON.stringify(singles)}`)
+    console.log(`      Single tokens: ${JSON.stringify(singles)}`)
   })

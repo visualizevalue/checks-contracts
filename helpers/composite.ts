@@ -29,7 +29,7 @@ export const composite = async (
     })
 
     if (toKeep.length == 1) {
-      console.log(`Waiting for current batch of tx...`)
+      // console.log(`      Waiting for current batch of tx...`)
       await tx.wait()
     }
   } catch (e) {
