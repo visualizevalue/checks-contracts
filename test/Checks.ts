@@ -17,7 +17,7 @@ describe('Checks', () => {
     expect(await checks.editionChecks()).to.equal('0x34eEBEE6942d8Def3c125458D1a86e0A897fd6f9')
 
     expect(await checks.name()).to.equal('Checks')
-    expect(await checks.symbol()).to.equal('Check')
+    expect(await checks.symbol()).to.equal('CHECKS')
   })
 
   describe('Mint', () => {

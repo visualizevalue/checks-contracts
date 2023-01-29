@@ -40,7 +40,7 @@ contract Checks is IChecks, ERC721 {
 
     /// @dev Initializes the Checks Originals contract and links the Edition contract.
     constructor() ERC721("Checks", "CHECKS") {
-        editionChecks = IChecksEdition(0x1c3F1129B7E90B52c7A83d9AB9CC389543C1eA77);
+        editionChecks = IChecksEdition(0x34eEBEE6942d8Def3c125458D1a86e0A897fd6f9);
     }
 
     /// @notice Migrate Checks Editions to Checks Originals by burning the Editions.
