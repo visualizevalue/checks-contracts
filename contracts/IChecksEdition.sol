@@ -13,4 +13,7 @@ interface IChecksEdition {
 
     /// @dev Returns the approved operator of a specific token.
     function getApproved(uint256 tokenId) external view returns (address operator);
+
+    /// @dev Error when burning unapproved tokens.
+    error TransferCallerNotOwnerNorApproved();
 }

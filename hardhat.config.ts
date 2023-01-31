@@ -1,5 +1,6 @@
 import * as dotenv from "dotenv"
 
+import "@nomicfoundation/hardhat-chai-matchers"
 import "@nomiclabs/hardhat-etherscan"
 import "@nomiclabs/hardhat-waffle"
 import "@typechain/hardhat"

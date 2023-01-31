@@ -7,4 +7,7 @@ contract ZoraEdition is ERC721Burnable {
     constructor() ERC721("Checks", "Check") {
         //
     }
+
+    /// @dev Error when burning unapproved tokens.
+    error TransferCallerNotOwnerNorApproved();
 }

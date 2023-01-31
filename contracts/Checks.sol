@@ -47,12 +47,12 @@ contract Checks is IChecks, ERC721 {
     ///         Requires the Approval of this contract on the Edition contract.
     /// @param tokenIds The Edition token IDs you want to migrate.
     function mint(uint256[] calldata tokenIds) external {
-        uint32 count = uint32(tokenIds.length);
+        uint256 count = tokenIds.length;
 
-        // Make sure we have the Editions burn approval from the minter.
-        require(editionChecks.isApprovedForAll(msg.sender, address(this)), "Edition burn not approved");
+        // We need a base seed for pseudo-randomization.
+        uint256 randomizer = Utils.seed(checks.minted + checks.burned);
 
-        // Make sure all referenced Editions are owned by or approved to the minter.
+        // Burn the Editions for the given tokenIds & mint the Originals.
         for (uint i = 0; i < count;) {
             uint256 id = tokenIds[i];
             address owner = editionChecks.ownerOf(id);
@@ -63,16 +63,6 @@ contract Checks is IChecks, ERC721 {
                 editionChecks.getApproved(id) == msg.sender,
                 "Minter not the owner"
             );
-
-            unchecked { i++; }
-        }
-
-        // We need a base seed for pseudo-randomization.
-        uint256 randomizer = Utils.seed(checks.minted);
-
-        // Burn the Editions for the given tokenIds & mint the Originals.
-        for (uint i = 0; i < count;) {
-            uint256 id = tokenIds[i];
 
             // Burn the edition.
             editionChecks.burn(id);
@@ -91,13 +81,13 @@ contract Checks is IChecks, ERC721 {
             check.seed = uint32(seed);
 
             // Mint the original.
-            _mint(msg.sender, id);
+            _safeMint(msg.sender, id);
 
             unchecked { i++; }
         }
 
         // Keep track of how many checks have been minted.
-        unchecked { checks.minted += count; }
+        unchecked { checks.minted += uint32(count); }
     }
 
     /// @notice Get a specific check with its genome settings.
@@ -192,7 +182,7 @@ contract Checks is IChecks, ERC721 {
     /// @param tokenId The token ID to burn.
     /// @dev A common purpose burn method.
     function burn(uint256 tokenId) external {
-        require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC721: caller is not token owner or approved");
+        require(_isApprovedOrOwner(msg.sender, tokenId), "ERC721: caller is not token owner or approved");
 
         // Perform the burn.
         _burn(tokenId);
@@ -240,20 +230,11 @@ contract Checks is IChecks, ERC721 {
         (
             StoredCheck storage toKeep,
             StoredCheck storage toBurn,
-            uint8 divisorIndex
         ) = _tokenOperation(tokenId, burnId);
 
         // Copy over static genome settings
-        toKeep.seed = toBurn.seed;
-        toKeep.animation = toBurn.animation;
-
-        // Copy over generational genome settings
-        for (uint256 i = 0; i <= divisorIndex;) {
-            toKeep.gradients[i] = toBurn.gradients[i];
-            toKeep.colorBands[i] = toBurn.colorBands[i];
-
-            unchecked { i++; }
-        }
+        // TODO: Test
+        toKeep = toBurn;
 
         // Perform the burn.
         _burn(burnId);
@@ -269,10 +250,10 @@ contract Checks is IChecks, ERC721 {
         (
             StoredCheck storage toKeep,
             StoredCheck storage toBurn,
+            uint256 divisorIndex
         ) = _tokenOperation(tokenId, burnId);
 
         // Composite our check
-        uint8 divisorIndex = toKeep.divisorIndex;
         toKeep.composites[divisorIndex] = uint16(burnId);
         toKeep.divisorIndex += 1;
 
@@ -292,7 +273,7 @@ contract Checks is IChecks, ERC721 {
             );
 
             // Coin-toss keep either one or the other animation setting.
-            toKeep.animation = randomizer % 2 == 1 ? toKeep.animation : toBurn.animation;
+            toKeep.animation = (randomizer % 2 == 1) ? toKeep.animation : toBurn.animation;
         }
 
         // Perform the burn.

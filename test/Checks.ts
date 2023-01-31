@@ -21,6 +21,7 @@ describe('Checks', () => {
   })
 
   describe('Mint', () => {
+    // TODO: Write test for approved hot wallet mint
     it('Should allow to mint originals', async () => {
       const { checksEditions, checks } = await loadFixture(deployChecks)
       const { jalil } = await loadFixture(impersonateAccounts)
@@ -28,7 +29,7 @@ describe('Checks', () => {
       expect(await checks.totalSupply()).to.equal(0)
 
       await expect(checks.connect(jalil).mint([1001]))
-        .to.be.revertedWith('Edition burn not approved')
+        .to.be.revertedWithCustomError(checksEditions, 'TransferCallerNotOwnerNorApproved')
 
       // First we need to approve the Originals contract on the Editions contract
       await checksEditions.connect(jalil).setApprovalForAll(checks.address, true)
@@ -100,6 +101,8 @@ describe('Checks', () => {
 
     it('Should allow people to swap their own tokens', async () => {
       const { checks, vv } = await loadFixture(mintedFixture)
+
+      // TODO: Check metadata / svg and ensure it's the same...
 
       const [toKeep, toBurn] = VV_TOKENS.slice(0, 2)
       await expect(checks.connect(vv).inItForTheArt(toKeep, toBurn))
