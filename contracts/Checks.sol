@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-
+import "./CHECKS721.sol";
 import "./ChecksArt.sol";
 import "./ChecksMetadata.sol";
 import "./IChecks.sol";
@@ -30,7 +29,7 @@ import "./Utilities.sol";
 @author VisualizeValue
 @notice This artwork is notable.
 */
-contract Checks is IChecks, ERC721 {
+contract Checks is IChecks, CHECKS721 {
 
     /// @notice The VV Checks Edition contract
     IChecksEdition public editionChecks;
@@ -39,14 +38,15 @@ contract Checks is IChecks, ERC721 {
     Checks checks;
 
     /// @dev Initializes the Checks Originals contract and links the Edition contract.
-    constructor() ERC721("Checks", "CHECKS") {
+    constructor() {
         editionChecks = IChecksEdition(0x34eEBEE6942d8Def3c125458D1a86e0A897fd6f9);
     }
 
     /// @notice Migrate Checks Editions to Checks Originals by burning the Editions.
     ///         Requires the Approval of this contract on the Edition contract.
     /// @param tokenIds The Edition token IDs you want to migrate.
-    function mint(uint256[] calldata tokenIds) external {
+    /// @param recipient The address to receive the tokens.
+    function mint(uint256[] calldata tokenIds, address recipient) external {
         uint256 count = tokenIds.length;
 
         // We need a base seed for pseudo-randomization.
@@ -81,7 +81,13 @@ contract Checks is IChecks, ERC721 {
             check.seed = uint32(seed);
 
             // Mint the original.
-            _safeMint(msg.sender, id);
+            // If we're minting to a vault, transfer it there.
+            if (msg.sender != recipient) {
+                _safeMintVia(recipient, msg.sender, id);
+            } else {
+                _safeMint(msg.sender, id);
+            }
+
 
             unchecked { i++; }
         }

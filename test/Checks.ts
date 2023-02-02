@@ -4,7 +4,7 @@ import { deployChecks } from './fixtures/deploy'
 import { impersonateAccounts } from './fixtures/impersonate'
 import { blackCheckFixture, mintedFixture } from './fixtures/mint'
 import { composite } from '../helpers/composite'
-import { JALIL, JALIL_TOKENS, VV, VV_TOKENS } from '../helpers/constants'
+import { JALIL, JALIL_TOKENS, JALIL_VAULT, VV, VV_TOKENS } from '../helpers/constants'
 import { fetchAndRender } from '../helpers/render'
 const { expect } = require('chai')
 const hre = require('hardhat')
@@ -20,7 +20,7 @@ describe('Checks', () => {
     expect(await checks.symbol()).to.equal('CHECKS')
   })
 
-  describe('Mint', () => {
+  describe.only('Mint', () => {
     // TODO: Write test for approved hot wallet mint
     it('Should allow to mint originals', async () => {
       const { checksEditions, checks } = await loadFixture(deployChecks)
@@ -28,25 +28,31 @@ describe('Checks', () => {
 
       expect(await checks.totalSupply()).to.equal(0)
 
-      await expect(checks.connect(jalil).mint([1001]))
+      await expect(checks.connect(jalil).mint([1001], JALIL_VAULT))
         .to.be.revertedWithCustomError(checksEditions, 'TransferCallerNotOwnerNorApproved')
 
       // First we need to approve the Originals contract on the Editions contract
       await checksEditions.connect(jalil).setApprovalForAll(checks.address, true)
 
       // Then we can mint one
-      await expect(checks.connect(jalil).mint([1001]))
+      await expect(checks.connect(jalil).mint([1001], JALIL_VAULT))
         .to.emit(checks, 'Transfer')
         .withArgs(ethers.constants.AddressZero, JALIL, 1001)
+        .to.emit(checks, 'Transfer')
+        .withArgs(JALIL, JALIL_VAULT, 1001)
 
       expect(await checks.totalSupply()).to.equal(1)
 
       // Or multiple
-      await expect(checks.connect(jalil).mint([44, 222]))
+      await expect(checks.connect(jalil).mint([44, 222], JALIL_VAULT))
         .to.emit(checks, 'Transfer')
         .withArgs(ethers.constants.AddressZero, JALIL, 44)
         .to.emit(checks, 'Transfer')
+        .withArgs(JALIL, JALIL_TOKENS, 44)
+        .to.emit(checks, 'Transfer')
         .withArgs(ethers.constants.AddressZero, JALIL, 222)
+        .to.emit(checks, 'Transfer')
+        .withArgs(JALIL, JALIL_VAULT, 222)
 
       expect(await checks.totalSupply()).to.equal(3)
     })
@@ -57,9 +63,11 @@ describe('Checks', () => {
 
       await checksEditions.connect(vv).setApprovalForAll(checks.address, true)
 
-      await expect(checks.connect(vv).mint(VV_TOKENS))
+      await expect(checks.connect(vv).mint(VV_TOKENS, JALIL_VAULT))
         .to.emit(checks, 'Transfer')
         .withArgs(ethers.constants.AddressZero, VV, 9696)
+        .to.emit(checks, 'Transfer')
+        .withArgs(VV, JALIL_VAULT, 9696)
     })
   })
 
