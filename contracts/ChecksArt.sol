@@ -203,9 +203,9 @@ library ChecksArt {
     function perRow(uint8 checks) public pure returns (uint8) {
         return checks == 80
             ? 8
-            : checks >= 20 || checks == 4
+            : checks >= 20
                 ? 4
-                : checks == 10
+                : checks == 10 || checks == 4
                     ? 2
                     : 1;
     }
@@ -217,7 +217,7 @@ library ChecksArt {
             ? 286
             : checks == 5
                 ? 304
-                : checks == 10
+                : checks == 10 || checks == 4
                     ? 268
                     : 196;
     }
@@ -227,9 +227,11 @@ library ChecksArt {
     function rowY(uint8 checks) public pure returns (uint16) {
         return checks > 4
             ? 160
-            : checks > 1
-                ? 304
-                : 286;
+            : checks == 4
+                ? 268
+                : checks > 1
+                    ? 304
+                    : 286;
     }
 
     /// @dev Get the animation SVG snipped for an individual check of a piece.
