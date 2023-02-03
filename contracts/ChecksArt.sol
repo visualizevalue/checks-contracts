@@ -102,22 +102,22 @@ library ChecksArt {
             if (gradient > 0) {
                 // If we're a gradient check, we select based on the color band looping around
                 // the 80 possible colors
-                for (uint i = 1; i < checksCount;) {
+                for (uint256 i = 1; i < checksCount;) {
                     indexes[i] = (indexes[0] + (i * gradient * colorBand / checksCount) % colorBand) % 80;
-                    unchecked { i++; }
+                    unchecked { ++i; }
                 }
             } else if (divisorIndex == 0) {
                 // If we select initial non gradient colors, we just take random ones
                 // available in our color band
-                for (uint i = 1; i < checksCount;) {
+                for (uint256 i = 1; i < checksCount;) {
                     indexes[i] = (indexes[0] + Utils.random(seed + i, colorBand)) % 80;
-                    unchecked { i++; }
+                    unchecked { ++i; }
                 }
             } else {
                 // If we have parent checks, we select our colors from their set
-                for (uint i = 1; i < checksCount;) {
+                for (uint256 i = 1; i < checksCount;) {
                     indexes[i] = Utils.random(seed + i, possibleColorChoices - 1);
-                    unchecked { i++; }
+                    unchecked { ++i; }
                 }
             }
         }
@@ -144,20 +144,20 @@ library ChecksArt {
 
             // If we don't have a gradient, we continue resolving from our parent for the remaining checks
             if (gradient == 0) {
-                for (uint256 i = 0; i < checksCount;) {
+                for (uint256 i; i < checksCount;) {
                     uint256 branchIndex = indexes[i] % count;
                     indexes[i] = indexes[i] < count
                         ? parentIndexes[branchIndex]
                         : compositedIndexes[branchIndex];
 
-                    unchecked { i++; }
+                    unchecked { ++i; }
                 }
             // If we have a gradient we base the remaining colors off our initial selection
             } else {
                 for (uint256 i = 1; i < checksCount;) {
                     indexes[i] = (indexes[0] + (i * gradient * colorBand / checksCount) % colorBand) % 80;
 
-                    unchecked { i++; }
+                    unchecked { ++i; }
                 }
             }
         }
@@ -191,7 +191,7 @@ library ChecksArt {
         checkColors[0] = allColors[indexes[0]];
 
         // Resolve each color via their index in EightyColors.COLORS.
-        for (uint i = 1; i < indexes.length; i++) {
+        for (uint256 i = 1; i < indexes.length; i++) {
             checkColors[i] = allColors[indexes[i]];
         }
 
@@ -287,7 +287,7 @@ library ChecksArt {
         string[80] memory allColors = EightyColors.COLORS();
 
         uint8 checksCount = data.count;
-        for (uint8 i = 0; i < checksCount; i++) {
+        for (uint8 i; i < checksCount; i++) {
             // Compute row settings.
             data.indexInRow = i % data.perRow;
             data.isNewRow = data.indexInRow == 0 && i > 0;
@@ -352,7 +352,7 @@ library ChecksArt {
     /// @dev Generate the SVG code for rows in the 8x10 Checks grid.
     function generateGridRow() public pure returns (bytes memory) {
         bytes memory row;
-        for (uint i = 0; i < 8; i++) {
+        for (uint256 i; i < 8; i++) {
             row = abi.encodePacked(
                 row,
                 '<use href="#square" x="', Utils.uint2str(196 + i*36), '" y="160"/>'
@@ -364,7 +364,7 @@ library ChecksArt {
     /// @dev Generate the SVG code for the entire 8x10 Checks grid.
     function generateGrid() public pure returns (bytes memory) {
         bytes memory grid;
-        for (uint i = 0; i < 10; i++) {
+        for (uint256 i; i < 10; i++) {
             grid = abi.encodePacked(
                 grid,
                 '<use href="#row" y="', Utils.uint2str(i*36), '"/>'

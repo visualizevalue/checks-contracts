@@ -22,7 +22,7 @@ library Utils {
         uint256 j = _i;
         uint256 len;
         while (j != 0) {
-            len++;
+            ++len;
             j /= 10;
         }
         bytes memory bstr = new bytes(len);

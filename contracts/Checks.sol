@@ -54,7 +54,7 @@ contract Checks is IChecks, CHECKS721 {
         uint256 randomizer = Utils.seed(checks.minted + checks.burned);
 
         // Burn the Editions for the given tokenIds & mint the Originals.
-        for (uint i = 0; i < count;) {
+        for (uint256 i; i < count;) {
             uint256 id = tokenIds[i];
             address owner = editionChecks.ownerOf(id);
 
@@ -89,7 +89,7 @@ contract Checks is IChecks, CHECKS721 {
                 _safeMint(msg.sender, id);
             }
 
-            unchecked { i++; }
+            unchecked { ++i; }
         }
 
         // Keep track of how many checks have been minted.
@@ -110,7 +110,7 @@ contract Checks is IChecks, CHECKS721 {
     function inItForTheArt(uint256 tokenId, uint256 burnId) external {
         _sacrifice(tokenId, burnId);
 
-        unchecked { checks.burned ++; }
+        unchecked { ++checks.burned; }
     }
 
     /// @notice Sacrifice multiple tokens to transfer their visual to other tokens.
@@ -119,10 +119,10 @@ contract Checks is IChecks, CHECKS721 {
     function inItForTheArts(uint256[] calldata tokenIds, uint256[] calldata burnIds) external {
         uint256 pairs = _multiTokenOperation(tokenIds, burnIds);
 
-        for (uint i = 0; i < pairs;) {
+        for (uint256 i; i < pairs;) {
             _sacrifice(tokenIds[i], burnIds[i]);
 
-            unchecked { i++; }
+            unchecked { ++i; }
         }
 
         unchecked { checks.burned += uint32(pairs); }
@@ -134,7 +134,7 @@ contract Checks is IChecks, CHECKS721 {
     function composite(uint256 tokenId, uint256 burnId) external {
         _composite(tokenId, burnId);
 
-        unchecked { checks.burned ++; }
+        unchecked { ++checks.burned; }
     }
 
     /// @notice Composite multiple tokens. This mixes the visuals and checks in remaining tokens.
@@ -143,10 +143,10 @@ contract Checks is IChecks, CHECKS721 {
     function compositeMany(uint256[] calldata tokenIds, uint256[] calldata burnIds) external {
         uint256 pairs = _multiTokenOperation(tokenIds, burnIds);
 
-        for (uint i = 0; i < pairs;) {
+        for (uint256 i; i < pairs;) {
             _composite(tokenIds[i], burnIds[i]);
 
-            unchecked { i++; }
+            unchecked { ++i; }
         }
 
         unchecked { checks.burned += uint32(pairs); }
@@ -158,12 +158,12 @@ contract Checks is IChecks, CHECKS721 {
     function infinity(uint256[] calldata tokenIds) external {
         uint256 count = tokenIds.length;
         require(count == 64, "Final composite requires 64 single Checks");
-        for (uint i = 0; i < count;) {
+        for (uint256 i; i < count;) {
             uint256 id = tokenIds[i];
             require(checks.all[id].divisorIndex == 6, "Non-single Check used");
             require(_isApprovedOrOwner(msg.sender, id), "Not allowed");
 
-            unchecked { i++; }
+            unchecked { ++i; }
         }
 
         // Complete final composite.
@@ -175,7 +175,7 @@ contract Checks is IChecks, CHECKS721 {
         for (uint i = 1; i < count;) {
             _burn(tokenIds[i]);
 
-            unchecked { i++; }
+            unchecked { ++i; }
         }
         unchecked { checks.burned += 63; }
 
@@ -194,7 +194,7 @@ contract Checks is IChecks, CHECKS721 {
         _burn(tokenId);
 
         // Keep track of supply.
-        unchecked { checks.burned++; }
+        unchecked { ++checks.burned; }
     }
 
     /// @notice Get the colors of all checks in a given token.
