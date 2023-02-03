@@ -40,7 +40,8 @@ contract Checks is IChecks, CHECKS721 {
 
     /// @dev Initializes the Checks Originals contract and links the Edition contract.
     constructor() {
-        editionChecks = IChecksEdition(0x34eEBEE6942d8Def3c125458D1a86e0A897fd6f9);
+        editionChecks = IChecksEdition(0x1c3F1129B7E90B52c7A83d9AB9CC389543C1eA77);
+        checks.day0 = uint32(block.timestamp);
     }
 
     /// @notice Migrate Checks Editions to Checks Originals by burning the Editions.
@@ -80,6 +81,7 @@ contract Checks is IChecks, CHECKS721 {
             check.colorBands[0] = _band(Utils.random(seed + 1, 160));
             check.gradients[0] = _gradient(Utils.random(seed + 2, 100));
             check.animation = uint8(Utils.random(seed + 3, 100));
+            check.day = Utils.day(checks.day0, block.timestamp);
             check.seed = uint32(seed);
 
             // Mint the original.
@@ -170,6 +172,7 @@ contract Checks is IChecks, CHECKS721 {
         // Complete final composite.
         uint256 blackCheckId = tokenIds[0];
         StoredCheck storage check = checks.all[blackCheckId];
+        check.day = Utils.day(checks.day0, block.timestamp);
         check.divisorIndex = 7;
 
         // Burn all 63 other Checks.
@@ -240,6 +243,9 @@ contract Checks is IChecks, CHECKS721 {
         // Copy over static genome settings
         checks.all[tokenId] = toBurn;
 
+        // Update the birth date for this token.
+        checks.all[tokenId].day = Utils.day(checks.day0, block.timestamp);
+
         // Perform the burn.
         _burn(burnId);
 
@@ -259,6 +265,7 @@ contract Checks is IChecks, CHECKS721 {
         ) = _tokenOperation(tokenId, burnId);
 
         // Composite our check
+        toKeep.day = Utils.day(checks.day0, block.timestamp);
         toKeep.composites[divisorIndex] = uint16(burnId);
         toKeep.divisorIndex += 1;
 
@@ -309,18 +316,18 @@ contract Checks is IChecks, CHECKS721 {
             uint8 divisorIndex
         )
     {
-        require(tokenId != burnId, "Same token operation");
-        require(
-            _isApprovedOrOwner(msg.sender, tokenId) && _isApprovedOrOwner(msg.sender, burnId),
-            "Not the owner or approved"
-        );
-
         toKeep = checks.all[tokenId];
         toBurn = checks.all[burnId];
         divisorIndex = toKeep.divisorIndex;
 
-        require(divisorIndex == toBurn.divisorIndex, "Different checks count");
-        require(divisorIndex < 6, "Operation on single checks");
+        require(
+            _isApprovedOrOwner(msg.sender, tokenId) &&
+            _isApprovedOrOwner(msg.sender, burnId) &&
+            divisorIndex == toBurn.divisorIndex &&
+            tokenId != burnId &&
+            divisorIndex < 6,
+            "Token operation not allowed"
+        );
     }
 
     /// @dev Get the index for a token gradient based on a number between 1 and 100.

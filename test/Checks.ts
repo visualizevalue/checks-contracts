@@ -1,5 +1,5 @@
 import fs from 'fs'
-import { loadFixture } from '@nomicfoundation/hardhat-network-helpers'
+import { loadFixture, time } from '@nomicfoundation/hardhat-network-helpers'
 import { deployChecks } from './fixtures/deploy'
 import { impersonateAccounts } from './fixtures/impersonate'
 import { blackCheckFixture, mintedFixture } from './fixtures/mint'
@@ -65,6 +65,27 @@ describe('Checks', () => {
       expect(await checks.totalSupply()).to.equal(4)
     })
 
+    it('Should set the token birth date correctly at mint', async () => {
+      const { checksEditions, checks } = await loadFixture(deployChecks)
+      const { jalil } = await loadFixture(impersonateAccounts)
+
+      // First we need to approve the Originals contract on the Editions contract
+      await checksEditions.connect(jalil).setApprovalForAll(checks.address, true)
+
+      // Then we can mint one
+      await expect(checks.connect(jalil).mint([1001], JALIL))
+        .to.emit(checks, 'Transfer')
+        .withArgs(ethers.constants.AddressZero, JALIL, 1001)
+      expect((await checks.getCheck(1001)).stored.day).to.equal(1)
+
+      await time.increase(3600 * 24)
+
+      await expect(checks.connect(jalil).mint([808], JALIL))
+        .to.emit(checks, 'Transfer')
+        .withArgs(ethers.constants.AddressZero, JALIL, 808)
+      expect((await checks.getCheck(808)).stored.day).to.equal(2)
+    })
+
     it('Should allow to mint many originals at once', async () => {
       const { checksEditions, checks } = await loadFixture(deployChecks)
       const { vv } = await loadFixture(impersonateAccounts)
@@ -112,7 +133,7 @@ describe('Checks', () => {
 
       const [toKeep, toBurn] = VV_TOKENS.slice(0, 2)
       await expect(checks.inItForTheArt(toKeep, toBurn))
-        .to.be.revertedWith('Not the owner or approved')
+        .to.be.revertedWith('Token operation not allowed')
     })
 
     it('Should allow people to swap their own tokens', async () => {
@@ -188,6 +209,19 @@ describe('Checks', () => {
       expect(toBurnSVG).to.equal(toKeepSVGAfter)
       expect(toKeepSVG).not.to.equal(toKeepSVGAfter)
     })
+
+    it('Should update the token birth date when swapping tokens', async () => {
+      const { checks, vv } = await loadFixture(mintedFixture)
+      const [toKeep, toBurn] = VV_TOKENS.slice(0, 2)
+
+      await time.increase(3600 * 24 * 3)
+
+      await expect(checks.connect(vv).inItForTheArt(toKeep, toBurn))
+        .to.emit(checks, 'Sacrifice')
+        .withArgs(toBurn, toKeep)
+
+      expect((await checks.getCheck(toKeep)).stored.day).to.equal(4)
+    })
   })
 
   describe('Compositing', () => {
@@ -196,7 +230,7 @@ describe('Checks', () => {
 
       const [toKeep, toBurn] = VV_TOKENS.slice(0, 2)
       await expect(checks.composite(toKeep, toBurn))
-        .to.be.revertedWith('Not the owner or approved')
+        .to.be.revertedWith('Token operation not allowed')
     })
 
     it('Should allow people to swap approved tokens', async () => {
@@ -265,6 +299,18 @@ describe('Checks', () => {
       await fetchAndRender(fortyId, checks)
 
       await fetchAndRender(JALIL_TOKENS[0], checks)
+    })
+
+    it('Should update the token birth date when compositing tokens', async () => {
+      const { checks, vv } = await loadFixture(mintedFixture)
+      const [toKeep, toBurn] = VV_TOKENS.slice(0, 2)
+
+      await time.increase(3600 * 24 * 4)
+
+      const tx = await checks.connect(vv).composite(toKeep, toBurn)
+      await tx.wait()
+
+      expect((await checks.getCheck(toKeep)).stored.day).to.equal(5)
     })
 
     it.skip('Should allow to composite to, mint, and render the black check', async () => {

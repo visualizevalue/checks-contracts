@@ -4,12 +4,13 @@ pragma solidity ^0.8.17;
 interface IChecks {
 
     struct StoredCheck {
-        uint32 seed;            // The seed is based the mint and enables pseudo-randomisation
         uint16[6] composites;  // The tokenIds that were composited into this one
         uint8[6] colorBands;  // The length of the used color band in percent
         uint8[6] gradients;  // Gradient settings for each generation
         uint8 divisorIndex; // Easy access to next / previous divisor
         uint8 animation;   // Animation seed
+        uint32 seed;      // The seed enables pseudo-randomisation
+        uint16 day;      // The days since token was created
     }
 
     struct Check {
@@ -24,6 +25,7 @@ interface IChecks {
     }
 
     struct Checks {
+        uint32 day0;
         uint32 minted;
         uint32 burned;
         mapping(uint256 => StoredCheck) all;

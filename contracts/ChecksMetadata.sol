@@ -58,7 +58,8 @@ library ChecksMetadata {
                     check.checksCount > 0
                         ? trait('Shift', check.direction == 0 ? 'IR' : 'UV', ',')
                         : '',
-                    trait('Checks', Utils.uint2str(uint256(check.checksCount)), ''),
+                    trait('Checks', Utils.uint2str(check.checksCount), ','),
+                    trait('Day', Utils.uint2str(check.stored.day), ''),
                 ']',
             '}'
         );

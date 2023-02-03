@@ -55,4 +55,9 @@ library Utils {
     function avg(uint8 one, uint8 two) public pure returns (uint8) {
         return (one & two) + (one ^ two) / 2;
     }
+
+    /// @dev Get the days since another date (input is seconds)
+    function day(uint256 from, uint256 to) public pure returns (uint16) {
+        return uint16((to - from) / 86400 + 1);
+    }
 }
