@@ -32,7 +32,7 @@ import "./Utilities.sol";
 */
 contract Checks is IChecks, CHECKS721 {
 
-    /// @notice The VV Checks Edition contract
+    /// @notice The VV Checks Edition contract.
     IChecksEdition public editionChecks;
 
     /// @dev We use this database for persistent storage.
@@ -58,14 +58,15 @@ contract Checks is IChecks, CHECKS721 {
             uint256 id = tokenIds[i];
             address owner = editionChecks.ownerOf(id);
 
+            // Check whether we're allowed to migrate this Edition.
             require(
                 owner == msg.sender ||
                 editionChecks.isApprovedForAll(owner, msg.sender) ||
                 editionChecks.getApproved(id) == msg.sender,
-                "Minter not the owner"
+                "Minter not owner or approved."
             );
 
-            // Burn the edition.
+            // Burn the Edition.
             editionChecks.burn(id);
 
             // Initialize our Check.
@@ -75,7 +76,7 @@ contract Checks is IChecks, CHECKS721 {
             // Randomized input with a uint32 max value.
             uint256 seed = (randomizer + id) % 4294967296;
 
-            // Check settings.
+            // Check genome.
             check.colorBands[0] = _band(Utils.random(seed + 1, 160));
             check.gradients[0] = _gradient(Utils.random(seed + 2, 100));
             check.animation = uint8(Utils.random(seed + 3, 100));

@@ -56,7 +56,7 @@ library ChecksMetadata {
                         ? trait('Speed', check.speed == 4 ? '2x' : check.speed == 2 ? '1x' : '0.5x', ',')
                         : '',
                     check.checksCount > 0
-                        ? trait('Direction', check.direction == 0 ? 'Down' : 'Up', ',')
+                        ? trait('Shift', check.direction == 0 ? 'IR' : 'UV', ',')
                         : '',
                     trait('Checks', Utils.uint2str(uint256(check.checksCount)), ''),
                 ']',
@@ -82,7 +82,9 @@ library ChecksMetadata {
     /// @dev Get the percentage values for different color bands. Compare ChecksArt.COLOR_BANDS.
     /// @param bandIndex The index of the color band.
     function colorBand(uint8 bandIndex) public pure returns (string memory) {
-        return [ '100%', '50%', '25%', '12.5%', '6.25%', '4%', '1.25%' ][bandIndex];
+        return [
+            '100 Percent', '50 Percent', '25 Percent', '12.5 Percent', '6.25 Percent', '4 Percent', '1.25 Percent'
+        ][bandIndex];
     }
 
     /// @dev Generate the SVG snipped for a single attribute.
