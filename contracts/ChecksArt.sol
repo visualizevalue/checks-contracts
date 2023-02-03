@@ -67,8 +67,6 @@ library ChecksArt {
         check.gradient  = check.hasManyChecks ? GRADIENTS()[stored.gradients[divisorIndex]] : 0;
         check.direction = uint8(stored.animation % 2);
         check.speed = uint8(2**(stored.animation % 3));
-
-        return check;
     }
 
     /// @dev Generate indexes for the color slots of check parents (up to the EightyColors.COLORS themselves).
