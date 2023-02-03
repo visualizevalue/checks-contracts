@@ -384,7 +384,7 @@ library ChecksArt {
             '<svg ',
                 'viewBox="0 0 680 680" ',
                 'fill="none" xmlns="http://www.w3.org/2000/svg" ',
-                'style="width:100%;background:black;overflow:hidden;"',
+                'style="width:100%;background:black;"',
             '>',
                 '<defs>',
                     '<path id="check" fill-rule="evenodd" d="', CHECKS_PATH, '"></path>',

@@ -120,6 +120,7 @@ library ChecksMetadata {
                     'body {',
                         'margin: 0;',
                         'background: #EFEFEF;',
+                        'overflow: hidden;',
                     '}',
                     'svg {',
                         'max-width: 100vw;',
