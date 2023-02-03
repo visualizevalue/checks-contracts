@@ -211,6 +211,8 @@ describe('Checks', () => {
       await expect(checks.connect(jalil).composite(toKeep, toBurn))
         .to.emit(checks, 'Composite')
         .withArgs(toKeep, toBurn, 40)
+        .to.emit(checks, 'MetadataUpdate')
+        .withArgs(toKeep)
     })
 
     it('Should allow to composite originals', async () => {

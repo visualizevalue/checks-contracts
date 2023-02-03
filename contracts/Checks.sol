@@ -183,6 +183,7 @@ contract Checks is IChecks, CHECKS721 {
         // When one is released from the prison of self, that is indeed freedom.
         // For the most great prison is the prison of self.
         emit Infinity(blackCheckId, tokenIds[1:]);
+        emit MetadataUpdate(blackCheckId);
     }
 
     /// @notice Burn a check. Note: This burn does not composite or swap tokens.
@@ -244,6 +245,7 @@ contract Checks is IChecks, CHECKS721 {
 
         // Notify DAPPs about the Sacrifice.
         emit IChecks.Sacrifice(burnId, tokenId);
+        emit MetadataUpdate(tokenId);
     }
 
     /// @dev Composite one token into to another and burn it.
@@ -284,6 +286,7 @@ contract Checks is IChecks, CHECKS721 {
 
         // Notify DAPPs about the Composite.
         emit IChecks.Composite(tokenId, burnId, ChecksArt.DIVISORS()[toKeep.divisorIndex]);
+        emit MetadataUpdate(tokenId);
     }
 
     /// @dev Make sure this is a valid request to composite/switch with multiple tokens.

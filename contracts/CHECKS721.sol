@@ -10,13 +10,14 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
+import "./IERC4906.sol";
 
 /**
  * @dev Implementation of https://eips.ethereum.org/EIPS/eip-721[ERC721] Non-Fungible Token Standard, including
  * the Metadata extension, but not including the Enumerable extension, which is available separately as
  * {ERC721Enumerable}.
  */
-contract CHECKS721 is Context, ERC165, IERC721, IERC721Metadata {
+contract CHECKS721 is Context, ERC165, IERC721, IERC721Metadata, IERC4906 {
     using Address for address;
     using Strings for uint256;
 
