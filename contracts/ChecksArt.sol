@@ -220,7 +220,7 @@ library ChecksArt {
                     : 196;
     }
 
-    /// @dev Get the Y-offset for positioning checks verticallt.
+    /// @dev Get the Y-offset for positioning checks vertically.
     /// @param checks The number of checks in the piece.
     function rowY(uint8 checks) public pure returns (uint16) {
         return checks > 4
