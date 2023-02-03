@@ -322,9 +322,8 @@ contract Checks is IChecks, CHECKS721 {
     /// @dev Get the index for a token gradient based on a number between 1 and 100.
     /// @param input The pseudorandom input to base the index on.
     function _gradient(uint256 input) internal pure returns(uint8) {
-        return input < 80 ? 0
-             : input < 96 ? 1
-             : uint8(2 + (input % 5));
+        return input > 10 ? 0
+             : uint8(1 + (input % 6));
     }
 
     /// @dev Get the index for a token color band based on a number between 1 and 160.
