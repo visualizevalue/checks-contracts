@@ -2,11 +2,11 @@ import * as dotenv from "dotenv"
 
 import "@nomicfoundation/hardhat-chai-matchers"
 import "@nomiclabs/hardhat-etherscan"
-import "@nomiclabs/hardhat-waffle"
+import "@nomiclabs/hardhat-ethers"
 import "@typechain/hardhat"
+import "hardhat-contract-sizer"
 import "hardhat-gas-reporter"
 import "solidity-coverage"
-import "hardhat-contract-sizer"
 
 import "./tasks/accounts"
 import "./tasks/deploy"

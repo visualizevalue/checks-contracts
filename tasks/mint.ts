@@ -17,7 +17,7 @@ task('mint-testing', 'Mint VV tokens')
     await checkEditions.connect(vv).setApprovalForAll(checks.address, true)
 
     // Mint all
-    await checks.connect(vv).mint(VV_TOKENS)
+    await checks.connect(vv).mint(VV_TOKENS, VV)
 
     console.log(`Minted all ${VV_TOKENS.length} Checks Originals`)
   })
@@ -34,7 +34,7 @@ task('mint-live', 'Mint original checks tokens')
 
     for (let i = 0; i < tokens.length; i+=100) {
       const ids = tokens.slice(i, i + 100)
-      const tx = await checks.connect(signer).mint(ids, {
+      const tx = await checks.connect(signer).mint(ids, signer.address, {
         gasLimit: 20_000_000,
       })
       console.log(`Minted original check ${tokens[i]} - ${tokens[i + 100 - 1]}`)

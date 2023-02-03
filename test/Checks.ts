@@ -20,8 +20,7 @@ describe('Checks', () => {
     expect(await checks.symbol()).to.equal('CHECKS')
   })
 
-  describe.only('Mint', () => {
-    // TODO: Write test for approved hot wallet mint
+  describe('Mint', () => {
     it('Should allow to mint originals', async () => {
       const { checksEditions, checks } = await loadFixture(deployChecks)
       const { jalil } = await loadFixture(impersonateAccounts)
@@ -43,18 +42,27 @@ describe('Checks', () => {
 
       expect(await checks.totalSupply()).to.equal(1)
 
+      const tx = await checks.connect(jalil).mint([808], JALIL)
+      await expect(tx)
+        .to.emit(checksEditions, 'Transfer')
+        .withArgs(JALIL, ethers.constants.AddressZero, 808)
+        .to.emit(checks, 'Transfer')
+        .withArgs(ethers.constants.AddressZero, JALIL, 808)
+      const receipt = await tx.wait()
+      expect(receipt.events.length).to.equal(3) // Reset approval + burn transfer + new mint
+
       // Or multiple
       await expect(checks.connect(jalil).mint([44, 222], JALIL_VAULT))
         .to.emit(checks, 'Transfer')
         .withArgs(ethers.constants.AddressZero, JALIL, 44)
         .to.emit(checks, 'Transfer')
-        .withArgs(JALIL, JALIL_TOKENS, 44)
+        .withArgs(JALIL, JALIL_VAULT, 44)
         .to.emit(checks, 'Transfer')
         .withArgs(ethers.constants.AddressZero, JALIL, 222)
         .to.emit(checks, 'Transfer')
         .withArgs(JALIL, JALIL_VAULT, 222)
 
-      expect(await checks.totalSupply()).to.equal(3)
+      expect(await checks.totalSupply()).to.equal(4)
     })
 
     it('Should allow to mint many originals at once', async () => {
@@ -110,12 +118,22 @@ describe('Checks', () => {
     it('Should allow people to swap their own tokens', async () => {
       const { checks, vv } = await loadFixture(mintedFixture)
 
-      // TODO: Check metadata / svg and ensure it's the same...
-
       const [toKeep, toBurn] = VV_TOKENS.slice(0, 2)
+
+      const toBurnSVG = await checks.svg(toBurn)
+      const toKeepSVG = await checks.svg(toKeep)
+      fs.writeFileSync('test/dist/sacrifice-burn-before.svg', toBurnSVG)
+      fs.writeFileSync('test/dist/sacrifice-keep-before.svg', toKeepSVG)
+
       await expect(checks.connect(vv).inItForTheArt(toKeep, toBurn))
         .to.emit(checks, 'Sacrifice')
         .withArgs(toBurn, toKeep)
+
+      const toKeepSVGAfter = await checks.svg(toKeep)
+      fs.writeFileSync('test/dist/sacrifice-keep-after.svg', toKeepSVGAfter)
+
+      expect(toBurnSVG).to.equal(toKeepSVGAfter)
+      expect(toKeepSVG).not.to.equal(toKeepSVGAfter)
     })
 
     it('Should allow people to swap approved tokens', async () => {
@@ -144,6 +162,31 @@ describe('Checks', () => {
         .withArgs(toBurn[1], toKeep[1])
         .to.emit(checks, 'Sacrifice')
         .withArgs(toBurn[2], toKeep[2])
+    })
+
+    it('Should allow swap composited tokens', async () => {
+      const { checks, vv } = await loadFixture(mintedFixture)
+
+      const tokens = VV_TOKENS.slice(0, 4)
+      await checks.connect(vv).compositeMany(tokens.slice(0, 2), tokens.slice(2, 4))
+
+      const toKeep = tokens[0]
+      const toBurn = tokens[1]
+
+      const toBurnSVG = await checks.svg(toBurn)
+      const toKeepSVG = await checks.svg(toKeep)
+      fs.writeFileSync('test/dist/sacrifice-40-burn-before.svg', toBurnSVG)
+      fs.writeFileSync('test/dist/sacrifice-40-keep-before.svg', toKeepSVG)
+
+      await expect(checks.connect(vv).inItForTheArt(toKeep, toBurn))
+        .to.emit(checks, 'Sacrifice')
+        .withArgs(toBurn, toKeep)
+
+      const toKeepSVGAfter = await checks.svg(toKeep)
+      fs.writeFileSync('test/dist/sacrifice-40-keep-after.svg', toKeepSVGAfter)
+
+      expect(toBurnSVG).to.equal(toKeepSVGAfter)
+      expect(toKeepSVG).not.to.equal(toKeepSVGAfter)
     })
   })
 

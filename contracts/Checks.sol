@@ -11,19 +11,20 @@ import "./Utilities.sol";
 /**
 ✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
 ✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
-✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓ ✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
-✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓         ✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
-✓✓✓✓✓✓✓✓✓                       ✓✓✓✓✓✓✓✓
-✓✓✓✓✓✓✓✓                         ✓✓✓✓✓✓✓
+✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓  ✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
+✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓          ✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
+✓✓✓✓✓✓✓✓✓                      ✓✓✓✓✓✓✓✓✓
+✓✓✓✓✓✓✓✓                        ✓✓✓✓✓✓✓✓
 ✓✓✓✓✓✓✓✓                ✓✓       ✓✓✓✓✓✓✓
 ✓✓✓✓✓                 ✓✓✓          ✓✓✓✓✓
 ✓✓✓✓                 ✓✓✓            ✓✓✓✓
 ✓✓✓✓✓          ✓✓  ✓✓✓             ✓✓✓✓✓
-✓✓✓✓✓✓✓✓         ✓✓✓             ✓✓✓✓✓✓✓
-✓✓✓✓✓✓✓✓                         ✓✓✓✓✓✓✓
-✓✓✓✓✓✓✓✓✓                       ✓✓✓✓✓✓✓✓
+✓✓✓✓✓✓✓          ✓✓✓             ✓✓✓✓✓✓✓
+✓✓✓✓✓✓✓✓                        ✓✓✓✓✓✓✓✓
+✓✓✓✓✓✓✓✓✓                      ✓✓✓✓✓✓✓✓✓
 ✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓          ✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
-✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓ ✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
+✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓  ✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
+✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
 ✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
 @title  Checks
 @author VisualizeValue
@@ -87,7 +88,6 @@ contract Checks is IChecks, CHECKS721 {
             } else {
                 _safeMint(msg.sender, id);
             }
-
 
             unchecked { i++; }
         }
@@ -233,14 +233,10 @@ contract Checks is IChecks, CHECKS721 {
     /// @param tokenId The token ID to keep.
     /// @param burnId The token ID to burn.
     function _sacrifice(uint256 tokenId, uint256 burnId) internal {
-        (
-            StoredCheck storage toKeep,
-            StoredCheck storage toBurn,
-        ) = _tokenOperation(tokenId, burnId);
+        (,StoredCheck storage toBurn,) = _tokenOperation(tokenId, burnId);
 
         // Copy over static genome settings
-        // TODO: Test
-        toKeep = toBurn;
+        checks.all[tokenId] = toBurn;
 
         // Perform the burn.
         _burn(burnId);

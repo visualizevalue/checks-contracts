@@ -1,22 +1,21 @@
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers'
 import { parseEther } from 'ethers/lib/utils'
-import { JACK, JALIL_TOKENS, TOP_HOLDERS, VV, VV_TOKENS } from '../../helpers/constants'
+import { JACK, JALIL, JALIL_TOKENS, TOP_HOLDERS, VV, VV_TOKENS } from '../../helpers/constants'
 import { impersonate } from '../../helpers/impersonate'
 import { deployChecks } from './deploy'
 import { impersonateAccounts } from './impersonate'
 import hre from 'hardhat'
 import { composite } from '../../helpers/composite'
-import { fetchAndRender } from '../../helpers/render'
 
 export async function mintedFixture() {
   const { checksEditions, checks } = await loadFixture(deployChecks)
   const { jalil, vv } = await loadFixture(impersonateAccounts)
 
   await checksEditions.connect(jalil).setApprovalForAll(checks.address, true)
-  await checks.connect(jalil).mint(JALIL_TOKENS)
+  await checks.connect(jalil).mint(JALIL_TOKENS, JALIL)
 
   await checksEditions.connect(vv).setApprovalForAll(checks.address, true)
-  await checks.connect(vv).mint(VV_TOKENS)
+  await checks.connect(vv).mint(VV_TOKENS, VV)
 
   return {
     checks,
@@ -38,7 +37,7 @@ export async function prepareBlackCheckFixture() {
     await checksEditions.connect(signer).setApprovalForAll(checks.address, true)
 
     for (let i = 0; i < tokens.length; i+=100) {
-      await checks.connect(signer).mint(tokens.slice(i, i + 100))
+      await checks.connect(signer).mint(tokens.slice(i, i + 100), signer.address)
     }
 
     for (const id of tokens) {
