@@ -105,7 +105,7 @@ describe('Checks', () => {
       const { checks } = await loadFixture(mintedFixture)
 
       await expect(checks.burn(VV_TOKENS[0]))
-        .to.be.revertedWith('ERC721: caller is not token owner or approved')
+        .to.be.revertedWithCustomError(checks, 'NotAllowed')
     })
 
     it('Should allow holders to burn their tokens', async () => {
@@ -133,7 +133,7 @@ describe('Checks', () => {
 
       const [toKeep, toBurn] = VV_TOKENS.slice(0, 2)
       await expect(checks.inItForTheArt(toKeep, toBurn))
-        .to.be.revertedWith('Token operation not allowed')
+        .to.be.revertedWithCustomError(checks, 'NotAllowed')
     })
 
     it('Should allow people to swap their own tokens', async () => {
@@ -230,7 +230,7 @@ describe('Checks', () => {
 
       const [toKeep, toBurn] = VV_TOKENS.slice(0, 2)
       await expect(checks.composite(toKeep, toBurn))
-        .to.be.revertedWith('Token operation not allowed')
+        .to.be.revertedWithCustomError(checks, 'NotAllowed')
     })
 
     it('Should allow people to swap approved tokens', async () => {
