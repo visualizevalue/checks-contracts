@@ -61,12 +61,12 @@ library ChecksArt {
         IChecks.StoredCheck memory stored = checks.all[tokenId];
         uint8 divisorIndex = stored.divisorIndex;
 
-        console.log('stored.epoch');
-        console.log(stored.epoch);
+        // console.log('stored.epoch');
+        // console.log(stored.epoch);
 
         uint128 randomness = checks.epochs[stored.epoch].randomness;
-        console.log('randomness');
-        console.log(randomness);
+        // console.log('randomness');
+        // console.log(randomness);
         check.seed = Utilities.random(uint256(keccak256(abi.encodePacked(randomness, tokenId))), type(uint256).max);
 
         check.stored = stored;
@@ -363,7 +363,7 @@ library ChecksArt {
         data.colors = colors_;
         data.gridColor = data.isBlack ? '#F2F2F2' : '#191919';
         data.canvasColor = data.isBlack ? '#FFF' : '#111';
-        console.log(colors_[0]);
+        // console.log(colors_[0]);
 
         // Compute positioning data.
         data.scale = data.count > 20 ? '1' : data.count > 1 ? '2' : '3';

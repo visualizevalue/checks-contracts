@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-import "./standards/CHECKS721.sol";
-import "./libraries/ChecksArt.sol";
-import "./libraries/ChecksMetadata.sol";
 import "./interfaces/IChecks.sol";
 import "./interfaces/IChecksEdition.sol";
+import "./libraries/ChecksArt.sol";
+import "./libraries/ChecksMetadata.sol";
 import "./libraries/Utilities.sol";
-import "./standards/WithEpochs.sol";
+import "./standards/CHECKS721.sol";
 
 /**
 ✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
@@ -31,7 +30,7 @@ import "./standards/WithEpochs.sol";
 @author VisualizeValue
 @notice This artwork is notable.
 */
-contract Checks is IChecks, CHECKS721, WithEpochs {
+contract Checks is IChecks, CHECKS721 {
 
     /// @notice The VV Checks Edition contract.
     IChecksEdition public editionChecks;
@@ -43,6 +42,34 @@ contract Checks is IChecks, CHECKS721, WithEpochs {
     constructor(address _checksEdition) {
         editionChecks = IChecksEdition(_checksEdition/*0x34eEBEE6942d8Def3c125458D1a86e0A897fd6f9*/);
         checks.day0 = uint32(block.timestamp);
+        checks.epoch = 1;
+    }
+
+    /// @dev Based on MouseDev's commit-reveal scheme.
+    function advanceEpoch() public {
+        IChecks.Epoch storage currentEpoch = checks.epochs[checks.epoch];
+
+        if (
+            // If epoch has not been commited,
+            currentEpoch.commited == false ||
+            // Or the reveal commitment timed out.
+            (currentEpoch.revealed == false && currentEpoch.revealBlock < block.number - 256)
+        ) {
+            // This means the epoch has not been commited, OR the epoch was commited but has expired.
+            // Set commited to true, and record the reveal block.
+            currentEpoch.revealBlock = uint64(block.number + 5);
+            currentEpoch.commited = true;
+
+        } else if (block.number > currentEpoch.revealBlock) {
+            // Epoch has been commited and is within range to be revealed.
+            // Set its randomness to the target block
+            currentEpoch.randomness = uint128(uint256(blockhash(currentEpoch.revealBlock)) % (2 ** 128 - 1));
+            currentEpoch.revealed = true;
+
+            checks.epoch++;
+
+            return advanceEpoch();
+        }
     }
 
     /// @notice Migrate Checks Editions to Checks Originals by burning the Editions.
@@ -52,8 +79,8 @@ contract Checks is IChecks, CHECKS721, WithEpochs {
     function mint(uint256[] calldata tokenIds, address recipient) external {
         uint256 count = tokenIds.length;
 
-        // Get the epoch for this token
-        resolveEpochIfNeeded();
+        // Initialize new epoch / resolve previous epoch.
+        advanceEpoch();
 
         // Burn the Editions for the given tokenIds & mint the Originals.
         for (uint256 i; i < count;) {
@@ -73,7 +100,7 @@ contract Checks is IChecks, CHECKS721, WithEpochs {
             // Initialize our Check.
             StoredCheck storage check = checks.all[id];
             check.day = Utilities.day(checks.day0, block.timestamp);
-            check.epoch = uint32(epochIndex);
+            check.epoch = uint32(checks.epoch);
             check.divisorIndex = 0;
 
             // Mint the original.
