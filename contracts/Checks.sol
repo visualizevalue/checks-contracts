@@ -39,8 +39,8 @@ contract Checks is IChecks, CHECKS721 {
     Checks checks;
 
     /// @dev Initializes the Checks Originals contract and links the Edition contract.
-    constructor() {
-        editionChecks = IChecksEdition(0x34eEBEE6942d8Def3c125458D1a86e0A897fd6f9);
+    constructor(address _checksEdition) {
+        editionChecks = IChecksEdition(_checksEdition/*0x34eEBEE6942d8Def3c125458D1a86e0A897fd6f9*/);
         checks.day0 = uint32(block.timestamp);
     }
 
