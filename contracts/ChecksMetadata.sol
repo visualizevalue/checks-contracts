@@ -35,7 +35,7 @@ library ChecksMetadata {
 
         bytes memory metadata = abi.encodePacked(
             '{',
-                '"name": "Checks ', Utils.uint2str(tokenId), '",',
+                '"name": "Checks ', Utilities.uint2str(tokenId), '",',
                 '"description": "This artwork is notable.",',
                 '"image": ',
                     '"data:image/svg+xml;base64,',
@@ -58,8 +58,8 @@ library ChecksMetadata {
                     check.checksCount > 0
                         ? trait('Shift', check.direction == 0 ? 'IR' : 'UV', ',')
                         : '',
-                    trait('Checks', Utils.uint2str(check.checksCount), ','),
-                    trait('Day', Utils.uint2str(check.stored.day), ''),
+                    trait('Checks', Utilities.uint2str(check.checksCount), ','),
+                    trait('Day', Utilities.uint2str(check.stored.day), ''),
                 ']',
             '}'
         );
@@ -115,7 +115,7 @@ library ChecksMetadata {
                 '<meta charset="UTF-8">',
                 '<meta http-equiv="X-UA-Compatible" content="IE=edge">',
                 '<meta name="viewport" content="width=device-width, initial-scale=1.0">',
-                '<title>Check #', Utils.uint2str(tokenId), '</title>',
+                '<title>Check #', Utilities.uint2str(tokenId), '</title>',
                 '<style>',
                     'html,',
                     'body {',

@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-library Utils {
+library Utilities {
     /// @dev Create a pseudo random number
     function seed(uint256 nonce) public view returns (uint256) {
         return uint256(

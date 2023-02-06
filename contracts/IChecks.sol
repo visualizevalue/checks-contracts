@@ -10,6 +10,7 @@ interface IChecks {
         uint8 divisorIndex; // Easy access to next / previous divisor
         uint8 animation;   // Animation seed
         uint32 seed;      // The seed enables pseudo-randomisation
+        uint32 epoch;
         uint16 day;      // The days since token was created
     }
 
@@ -46,5 +47,9 @@ interface IChecks {
         uint256 indexed tokenId,
         uint256[] indexed burnedIds
     );
+
+    error NotAllowed();
+    error InvalidTokenCount();
+    error BlackCheck__InvalidCheck();
 
 }

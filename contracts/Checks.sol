@@ -6,6 +6,7 @@ import "./ChecksArt.sol";
 import "./ChecksMetadata.sol";
 import "./IChecks.sol";
 import "./IChecksEdition.sol";
+import "./Randomizer.sol";
 import "./Utilities.sol";
 
 /**
@@ -30,7 +31,7 @@ import "./Utilities.sol";
 @author VisualizeValue
 @notice This artwork is notable.
 */
-contract Checks is IChecks, CHECKS721 {
+contract Checks is IChecks, CHECKS721, Randomizer {
 
     /// @notice The VV Checks Edition contract.
     IChecksEdition public editionChecks;
@@ -52,7 +53,7 @@ contract Checks is IChecks, CHECKS721 {
         uint256 count = tokenIds.length;
 
         // We need a base seed for pseudo-randomization.
-        uint256 randomizer = Utils.seed(checks.minted + checks.burned);
+        uint256 randomizer = Utilities.seed(checks.minted + checks.burned);
 
         // Burn the Editions for the given tokenIds & mint the Originals.
         for (uint256 i; i < count;) {
@@ -60,12 +61,11 @@ contract Checks is IChecks, CHECKS721 {
             address owner = editionChecks.ownerOf(id);
 
             // Check whether we're allowed to migrate this Edition.
-            require(
-                owner == msg.sender ||
-                editionChecks.isApprovedForAll(owner, msg.sender) ||
-                editionChecks.getApproved(id) == msg.sender,
-                "Minter not owner or approved."
-            );
+            if (
+                owner != msg.sender &&
+                (! editionChecks.isApprovedForAll(owner, msg.sender)) &&
+                editionChecks.getApproved(id) != msg.sender
+            ) { revert NotAllowed(); }
 
             // Burn the Edition.
             editionChecks.burn(id);
@@ -78,10 +78,10 @@ contract Checks is IChecks, CHECKS721 {
             uint256 seed = (randomizer + id) % 4294967296;
 
             // Check genome.
-            check.colorBands[0] = _band(Utils.random(seed + 1, 160));
-            check.gradients[0] = _gradient(Utils.random(seed + 2, 100));
-            check.animation = uint8(Utils.random(seed + 3, 100));
-            check.day = Utils.day(checks.day0, block.timestamp);
+            check.colorBands[0] = _band(Utilities.random(seed + 1, 160));
+            check.gradients[0] = _gradient(Utilities.random(seed + 2, 100));
+            check.animation = uint8(Utilities.random(seed + 3, 100));
+            check.day = Utilities.day(checks.day0, block.timestamp);
             check.seed = uint32(seed);
 
             // Mint the original.
@@ -160,11 +160,17 @@ contract Checks is IChecks, CHECKS721 {
     /// @dev The check at index 0 survives.
     function infinity(uint256[] calldata tokenIds) external {
         uint256 count = tokenIds.length;
-        require(count == 64, "Final composite requires 64 single Checks");
+        if(count != 64) {
+            revert InvalidTokenCount();
+        }
         for (uint256 i; i < count;) {
             uint256 id = tokenIds[i];
-            require(checks.all[id].divisorIndex == 6, "Non-single Check used");
-            require(_isApprovedOrOwner(msg.sender, id), "Not allowed");
+            if (checks.all[id].divisorIndex != 6 || ! _isApprovedOrOwner(msg.sender, id)) {
+                revert BlackCheck__InvalidCheck();
+            }
+            if (!_isApprovedOrOwner(msg.sender, id)) {
+                revert NotAllowed();
+            }
 
             unchecked { ++i; }
         }
@@ -172,7 +178,7 @@ contract Checks is IChecks, CHECKS721 {
         // Complete final composite.
         uint256 blackCheckId = tokenIds[0];
         StoredCheck storage check = checks.all[blackCheckId];
-        check.day = Utils.day(checks.day0, block.timestamp);
+        check.day = Utilities.day(checks.day0, block.timestamp);
         check.divisorIndex = 7;
 
         // Burn all 63 other Checks.
@@ -193,7 +199,9 @@ contract Checks is IChecks, CHECKS721 {
     /// @param tokenId The token ID to burn.
     /// @dev A common purpose burn method.
     function burn(uint256 tokenId) external {
-        require(_isApprovedOrOwner(msg.sender, tokenId), "ERC721: caller is not token owner or approved");
+        if (! _isApprovedOrOwner(msg.sender, tokenId)) {
+            revert NotAllowed();
+        }
 
         // Perform the burn.
         _burn(tokenId);
@@ -244,7 +252,7 @@ contract Checks is IChecks, CHECKS721 {
         checks.all[tokenId] = toBurn;
 
         // Update the birth date for this token.
-        checks.all[tokenId].day = Utils.day(checks.day0, block.timestamp);
+        checks.all[tokenId].day = Utilities.day(checks.day0, block.timestamp);
 
         // Perform the burn.
         _burn(burnId);
@@ -265,21 +273,26 @@ contract Checks is IChecks, CHECKS721 {
         ) = _tokenOperation(tokenId, burnId);
 
         // Composite our check
-        toKeep.day = Utils.day(checks.day0, block.timestamp);
+        toKeep.day = Utilities.day(checks.day0, block.timestamp);
         toKeep.composites[divisorIndex] = uint16(burnId);
         toKeep.divisorIndex += 1;
 
         if (toKeep.divisorIndex < 6) {
             // Need a randomizer for gene manipulation.
-            uint256 randomizer = Utils.seed(checks.burned);
+            // uint256 randomizer = Utilities.seed(checks.burned);
+            uint256 randomizer = uint256(keccak256(abi.encodePacked(
+                // keccak256(abi.encodePacked(Randomizer.seedForEpoch(toKeep.epoch), tokenId)),
+                toKeep.divisorIndex,
+                "composite-divisor"
+            )));
 
             // We take the smallest gradient in 20% of cases, or continue as random checks.
-            toKeep.gradients[toKeep.divisorIndex] = Utils.random(randomizer, 100) > 80
-                ? Utils.minGt0(toKeep.gradients[divisorIndex], toBurn.gradients[divisorIndex])
-                : Utils.min(toKeep.gradients[divisorIndex], toBurn.gradients[divisorIndex]);
+            toKeep.gradients[toKeep.divisorIndex] = Utilities.random(randomizer, 100) > 80
+                ? Utilities.minGt0(toKeep.gradients[divisorIndex], toBurn.gradients[divisorIndex])
+                : Utilities.min(toKeep.gradients[divisorIndex], toBurn.gradients[divisorIndex]);
 
             // We breed the lower end average color band when breeding.
-            toKeep.colorBands[toKeep.divisorIndex] = Utils.avg(
+            toKeep.colorBands[toKeep.divisorIndex] = Utilities.avg(
                 toKeep.colorBands[divisorIndex],
                 toBurn.colorBands[divisorIndex]
             );
@@ -303,7 +316,9 @@ contract Checks is IChecks, CHECKS721 {
         internal pure returns (uint256 pairs)
     {
         pairs = tokenIds.length;
-        require(pairs == burnIds.length, "Invalid number of tokens to composite");
+        if (pairs != burnIds.length) {
+            revert InvalidTokenCount();
+        }
     }
 
     /// @dev Make sure this is a valid request to composite/switch a token pair.
@@ -320,14 +335,15 @@ contract Checks is IChecks, CHECKS721 {
         toBurn = checks.all[burnId];
         divisorIndex = toKeep.divisorIndex;
 
-        require(
-            _isApprovedOrOwner(msg.sender, tokenId) &&
-            _isApprovedOrOwner(msg.sender, burnId) &&
-            divisorIndex == toBurn.divisorIndex &&
-            tokenId != burnId &&
-            divisorIndex < 6,
-            "Token operation not allowed"
-        );
+        if (
+            ! _isApprovedOrOwner(msg.sender, tokenId) ||
+            ! _isApprovedOrOwner(msg.sender, burnId) ||
+            divisorIndex != toBurn.divisorIndex ||
+            tokenId == burnId ||
+            divisorIndex > 5
+        ) {
+            revert NotAllowed();
+        }
     }
 
     /// @dev Get the index for a token gradient based on a number between 1 and 100.

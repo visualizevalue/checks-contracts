@@ -93,7 +93,7 @@ library ChecksArt {
 
         // We initialize our index and select the first color
         uint256[] memory indexes = new uint256[](checksCount);
-        indexes[0] = Utils.random(seed, possibleColorChoices - 1);
+        indexes[0] = Utilities.random(seed, possibleColorChoices - 1);
 
         // If we have more than one check, continue selecting colors
         if (check.hasManyChecks) {
@@ -108,13 +108,13 @@ library ChecksArt {
                 // If we select initial non gradient colors, we just take random ones
                 // available in our color band
                 for (uint256 i = 1; i < checksCount;) {
-                    indexes[i] = (indexes[0] + Utils.random(seed + i, colorBand)) % 80;
+                    indexes[i] = (indexes[0] + Utilities.random(seed + i, colorBand)) % 80;
                     unchecked { ++i; }
                 }
             } else {
                 // If we have parent checks, we select our colors from their set
                 for (uint256 i = 1; i < checksCount;) {
-                    indexes[i] = Utils.random(seed + i, possibleColorChoices - 1);
+                    indexes[i] = Utilities.random(seed + i, possibleColorChoices - 1);
                     unchecked { ++i; }
                 }
             }
@@ -272,7 +272,7 @@ library ChecksArt {
         return abi.encodePacked(
             '<animate ',
                 'attributeName="fill" values="',values,'" ',
-                'dur="',Utils.uint2str(count * 2 / data.check.speed),'s" begin="animation.begin" ',
+                'dur="',Utilities.uint2str(count * 2 / data.check.speed),'s" begin="animation.begin" ',
                 'repeatCount="indefinite" ',
             '/>'
         );
@@ -303,8 +303,8 @@ library ChecksArt {
                     data.rowX += data.spaceX / 2;
                 }
             }
-            string memory translateX = Utils.uint2str(data.rowX + data.indexInRow * data.spaceX);
-            string memory translateY = Utils.uint2str(data.rowY);
+            string memory translateX = Utilities.uint2str(data.rowX + data.indexInRow * data.spaceX);
+            string memory translateY = Utilities.uint2str(data.rowY);
 
             // Render the current check.
             checksBytes = abi.encodePacked(checksBytes, abi.encodePacked(
@@ -353,7 +353,7 @@ library ChecksArt {
         for (uint256 i; i < 8; i++) {
             row = abi.encodePacked(
                 row,
-                '<use href="#square" x="', Utils.uint2str(196 + i*36), '" y="160"/>'
+                '<use href="#square" x="', Utilities.uint2str(196 + i*36), '" y="160"/>'
             );
         }
         return row;
@@ -365,7 +365,7 @@ library ChecksArt {
         for (uint256 i; i < 10; i++) {
             grid = abi.encodePacked(
                 grid,
-                '<use href="#row" y="', Utils.uint2str(i*36), '"/>'
+                '<use href="#row" y="', Utilities.uint2str(i*36), '"/>'
             );
         }
 
