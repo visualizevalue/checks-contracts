@@ -7,9 +7,11 @@ const ethers = hre.ethers
 
 describe('WithReveal', () => {
   let signers: SignerWithAddress[];
+  let signer: SignerWithAddress
 
   before(async () => {
     signers = await ethers.getSigners()
+    signer = signers[0]
   })
 
   it('Should mint unrevealed tokens', async () => {
@@ -17,7 +19,7 @@ describe('WithReveal', () => {
     await checksEditions.setApprovalForAll(checks.address, true);
 
     await checksEditions.mintArbitrary(1)
-    await checks.mint([1], signers[0].address)
+    await checks.mint([1], signer.address)
 
     const beforeReveal = await checks.getCheck(1)
     expect(beforeReveal.isRevealed).to.equal(false)
@@ -31,7 +33,7 @@ describe('WithReveal', () => {
     await checksEditions.setApprovalForAll(checks.address, true);
 
     await checksEditions.mintArbitrary(1)
-    await checks.mint([1], signers[0].address)
+    await checks.mint([1], signer.address)
 
     const beforeReveal = await checks.getCheck(1)
     expect(beforeReveal.isRevealed).to.equal(false)
@@ -48,13 +50,13 @@ describe('WithReveal', () => {
     await checksEditions.setApprovalForAll(checks.address, true);
     await checksEditions.mintAmount(2)
 
-    await checks.mint([1], signers[0].address)
+    await checks.mint([1], signer.address)
     const beforeReveal = await checks.getCheck(1)
     expect(beforeReveal.isRevealed).to.equal(false)
 
     await mine(5)
 
-    await checks.mint([2], signers[0].address)
+    await checks.mint([2], signer.address)
     expect((await checks.getCheck(1)).isRevealed).to.equal(true)
     expect((await checks.getCheck(2)).isRevealed).to.equal(false)
   })
