@@ -7,6 +7,7 @@ import "./libraries/ChecksMetadata.sol";
 import "./interfaces/IChecks.sol";
 import "./interfaces/IChecksEdition.sol";
 import "./libraries/Utilities.sol";
+import "./standards/WithEpochs.sol";
 
 /**
 ✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
@@ -30,7 +31,7 @@ import "./libraries/Utilities.sol";
 @author VisualizeValue
 @notice This artwork is notable.
 */
-contract Checks is IChecks, CHECKS721 {
+contract Checks is IChecks, CHECKS721, WithEpochs {
 
     /// @notice The VV Checks Edition contract.
     IChecksEdition public editionChecks;
@@ -44,36 +45,6 @@ contract Checks is IChecks, CHECKS721 {
         checks.day0 = uint32(block.timestamp);
     }
 
-    function currentEpoch () public view returns (uint256, IChecks.Epoch memory) {
-        return (checks.epoch, checks.epochs[checks.epoch]);
-    }
-
-    function nextEpoch() public returns (uint256, IChecks.Epoch memory) {
-        uint256 newEpochIndex = checks.epoch + 1;
-        IChecks.Epoch storage newEpoch = checks.epochs[newEpochIndex];
-
-        if (
-            // Initialize the next epoch or
-            newEpoch.blockNumber == 0 ||
-            // Reinitialize it if it's not been resolved in time.
-            newEpoch.blockNumber < block.number - 256
-        ) {
-            // Set the minimum wait time until resolve.
-            newEpoch.blockNumber = uint64(block.number + 5);
-        }
-        // Advance the epoch if we've waited long enough.
-        else if (newEpoch.blockNumber < block.number) {
-            // Set the source of randomness for our last epoch.apply
-            newEpoch.randomness = uint128(uint256(blockhash(newEpoch.blockNumber)));
-
-            checks.epoch = newEpochIndex;
-
-            return nextEpoch();
-        }
-
-        return (newEpochIndex, newEpoch);
-    }
-
     /// @notice Migrate Checks Editions to Checks Originals by burning the Editions.
     ///         Requires the Approval of this contract on the Edition contract.
     /// @param tokenIds The Edition token IDs you want to migrate.
@@ -82,7 +53,7 @@ contract Checks is IChecks, CHECKS721 {
         uint256 count = tokenIds.length;
 
         // Get the epoch for this token
-        (uint256 nextEpochIndex,) = nextEpoch();
+        resolveEpochIfNeeded();
 
         // Burn the Editions for the given tokenIds & mint the Originals.
         for (uint256 i; i < count;) {
@@ -102,7 +73,7 @@ contract Checks is IChecks, CHECKS721 {
             // Initialize our Check.
             StoredCheck storage check = checks.all[id];
             check.day = Utilities.day(checks.day0, block.timestamp);
-            check.epoch = uint32(nextEpochIndex);
+            check.epoch = uint32(epochIndex);
             check.divisorIndex = 0;
 
             // Mint the original.

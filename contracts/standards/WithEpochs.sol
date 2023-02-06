@@ -24,42 +24,41 @@ pragma solidity ^0.8.17;
 
 struct Epoch {
     uint128 randomness;
-    uint64 blockNumber;
+    uint64 revealBlock;
+    bool commited;
+    bool revealed;
 }
 
 
 abstract contract WithEpochs {
-    uint256 public epochIndex = 0;
+    uint256 public epochIndex = 1;
 
     mapping(uint256 => Epoch) public epochs;
 
-    function currentEpoch () public view returns (uint256, Epoch memory) {
-        return (epochIndex, epochs[epochIndex]);
-    }
-
-    function nextEpoch() public returns (uint256, Epoch memory) {
-        uint256 newEpochIndex = epochIndex + 1;
-        Epoch storage newEpoch = epochs[newEpochIndex];
+    function resolveEpochIfNeeded() public {
+        Epoch storage currentEpoch = epochs[epochIndex];
 
         if (
-            // Initialize the next epoch
-            newEpoch.blockNumber == 0 ||
-            // Or reinitialize it if it's not been resolved in time.
-            newEpoch.blockNumber < block.number - 256
+            //If epoch has not been commited
+            currentEpoch.commited == false ||
+            //If epoch has not been revealed, but the block is too far away (256 block)
+            (currentEpoch.revealed == false && currentEpoch.revealBlock < block.number - 256)
         ) {
-            // Set the minimum wait time until resolve.
-            newEpoch.blockNumber = uint64(block.number + 5);
+            //This means the epoch has not been commited, OR the epoch was commited but has expired.
+
+            //Set commited to true, and record the reveal block
+            currentEpoch.revealBlock = uint64(block.number + 5);
+            currentEpoch.commited = true;
+
+        } else if (block.number > currentEpoch.revealBlock) {
+            //Epoch has been commited and is within range to be revealed.
+            //Set its randomness to the target block
+            currentEpoch.randomness = uint128(uint256(blockhash(currentEpoch.revealBlock)) % (2 ** 128 - 1));
+            currentEpoch.revealed = true;
+
+            epochIndex++;
+
+            return resolveEpochIfNeeded();
         }
-        // Advance the epoch if we've waited long enough.
-        else if (newEpoch.blockNumber < block.number) {
-            // Set the source of randomness for our last epoch
-            newEpoch.randomness = uint128(uint256(blockhash(newEpoch.blockNumber)));
-
-            epochIndex = newEpochIndex;
-
-            return nextEpoch();
-        }
-
-        return (newEpochIndex, newEpoch);
     }
 }
