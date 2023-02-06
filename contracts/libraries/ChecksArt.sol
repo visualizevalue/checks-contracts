@@ -2,7 +2,7 @@
 pragma solidity ^0.8.17;
 
 import "./EightyColors.sol";
-import "./IChecks.sol";
+import "../interfaces/IChecks.sol";
 import "./Utilities.sol";
 
 import "hardhat/console.sol";

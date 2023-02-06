@@ -4,7 +4,7 @@ pragma solidity ^0.8.17;
 import "@openzeppelin/contracts/utils/Base64.sol";
 
 import "./ChecksArt.sol";
-import "./IChecks.sol";
+import "../interfaces/IChecks.sol";
 import "./Utilities.sol";
 
 /**

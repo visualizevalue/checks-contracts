@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-import "./CHECKS721.sol";
-import "./ChecksArt.sol";
-import "./ChecksMetadata.sol";
-import "./IChecks.sol";
-import "./IChecksEdition.sol";
-import "./Utilities.sol";
+import "./standards/CHECKS721.sol";
+import "./libraries/ChecksArt.sol";
+import "./libraries/ChecksMetadata.sol";
+import "./interfaces/IChecks.sol";
+import "./interfaces/IChecksEdition.sol";
+import "./libraries/Utilities.sol";
 
 /**
 ✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓

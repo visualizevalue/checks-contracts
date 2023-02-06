@@ -21,10 +21,17 @@ pragma solidity ^0.8.17;
 @author mousedev.eth 🐭, jalil.eth
 @notice Onchain sources of randomness via future commitments.
 */
-abstract contract WithEpochs {
-    uint256 internal epochIndex = 0;
 
-    mapping(uint256 => Epoch) internal epochs;
+struct Epoch {
+    uint128 randomness;
+    uint64 blockNumber;
+}
+
+
+abstract contract WithEpochs {
+    uint256 public epochIndex = 0;
+
+    mapping(uint256 => Epoch) public epochs;
 
     function currentEpoch () public view returns (uint256, Epoch memory) {
         return (epochIndex, epochs[epochIndex]);
@@ -55,9 +62,4 @@ abstract contract WithEpochs {
 
         return (newEpochIndex, newEpoch);
     }
-}
-
-struct Epoch {
-    uint128 randomness;
-    uint64 blockNumber;
 }
