@@ -136,10 +136,18 @@ describe('Checks', () => {
         .to.be.revertedWithCustomError(checks, 'NotAllowed')
     })
 
-    it('Should allow people to swap their own tokens', async () => {
+    it.only('Should allow people to swap their own tokens', async () => {
       const { checks, vv } = await loadFixture(mintedFixture)
 
       const [toKeep, toBurn] = VV_TOKENS.slice(0, 2)
+
+      console.log(await checks.getCheck(toKeep))
+
+      await time.increase(61)
+      const tx = await checks.nextEpoch()
+      await tx.wait()
+
+      console.log(await checks.getCheck(toKeep))
 
       const toBurnSVG = await checks.svg(toBurn)
       const toKeepSVG = await checks.svg(toKeep)

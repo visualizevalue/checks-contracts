@@ -18,6 +18,7 @@ interface IChecks {
     struct Check {
         StoredCheck stored;
         uint16 composite;       // The parent tokenId that was composited into this one
+        bool isRevealed;        // Whether it is revealed
         bool isRoot;           // Whether it has 80 checks
         bool hasManyChecks;    // Quick access for whether the check has many checks
         uint8 checksCount;    // How many checks this token has
@@ -37,7 +38,7 @@ interface IChecks {
         uint32 day0;
         uint32 minted;
         uint32 burned;
-        uint256 currentEpoch;
+        uint256 epoch;
         mapping(uint256 => Epoch) epochs;
         mapping(uint256 => StoredCheck) all;
     }

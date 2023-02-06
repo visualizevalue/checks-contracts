@@ -5,6 +5,8 @@ import "./EightyColors.sol";
 import "./IChecks.sol";
 import "./Utilities.sol";
 
+import "hardhat/console.sol";
+
 /**
 
  /////////   VV CHECKS   /////////
@@ -60,9 +62,10 @@ library ChecksArt {
         uint8 divisorIndex = stored.divisorIndex;
 
         uint128 randomness = checks.epochs[stored.epoch].randomness;
-        uint256 seed = Utilities.random(randomness + tokenId, type(uint256).max);
+        uint256 seed = Utilities.random(uint256(keccak256(abi.encodePacked(randomness, tokenId))), type(uint256).max);
 
         check.stored = stored;
+        check.isRevealed = randomness > 0;
         check.isRoot = divisorIndex == 0;
         check.hasManyChecks = divisorIndex < 6;
         check.checksCount = DIVISORS()[divisorIndex];
@@ -190,6 +193,14 @@ library ChecksArt {
             return (zeroColors, zeroIndexes);
         }
 
+        if (!check.isRevealed) {
+            string[] memory preRevealColors = new string[](1);
+            uint256[] memory preRevealIndexes = new uint256[](1);
+            preRevealColors[0] = '424242';
+            preRevealIndexes[0] = 0;
+            return (preRevealColors, preRevealIndexes);
+        }
+
         // Fetch the indices on the original color mapping.
         uint256[] memory indexes = colorIndexes(check.stored.divisorIndex, check, checks);
 
@@ -254,10 +265,6 @@ library ChecksArt {
         string[80] memory allColors
     ) public pure returns (bytes memory)
     {
-        if (data.isBlack) {
-            return '';
-        }
-
         // We only pick 20 colors from our gradient to reduce execution time.
         uint8 count = 20;
 
@@ -317,12 +324,15 @@ library ChecksArt {
             }
             string memory translateX = Utilities.uint2str(data.rowX + data.indexInRow * data.spaceX);
             string memory translateY = Utilities.uint2str(data.rowY);
+            string memory color = data.check.isRevealed ? data.colors[i] : data.colors[0];
 
             // Render the current check.
             checksBytes = abi.encodePacked(checksBytes, abi.encodePacked(
                 '<g transform="translate(', translateX, ', ', translateY, ') scale(', data.scale, ')">',
-                    '<use href="#check" fill="#', data.colors[i], '">',
-                        fillAnimation(data, data.colorIndexes[i], allColors),
+                    '<use href="#check" fill="#', color, '">',
+                        (data.check.isRevealed && !data.isBlack)
+                            ? fillAnimation(data, data.colorIndexes[i], allColors)
+                            : bytes(''),
                     '</use>'
                 '</g>'
             ));

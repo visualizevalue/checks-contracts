@@ -7,7 +7,6 @@ import "./ChecksMetadata.sol";
 import "./IChecks.sol";
 import "./IChecksEdition.sol";
 import "./Utilities.sol";
-import "./WithEpochs.sol";
 
 /**
 ✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
@@ -31,7 +30,7 @@ import "./WithEpochs.sol";
 @author VisualizeValue
 @notice This artwork is notable.
 */
-contract Checks is IChecks, CHECKS721, WithEpochs {
+contract Checks is IChecks, CHECKS721 {
 
     /// @notice The VV Checks Edition contract.
     IChecksEdition public editionChecks;
@@ -45,6 +44,36 @@ contract Checks is IChecks, CHECKS721, WithEpochs {
         checks.day0 = uint32(block.timestamp);
     }
 
+    function currentEpoch () public view returns (uint256, IChecks.Epoch memory) {
+        return (checks.epoch, checks.epochs[checks.epoch]);
+    }
+
+    function nextEpoch() public returns (uint256, IChecks.Epoch memory) {
+        uint256 newEpochIndex = checks.epoch + 1;
+        IChecks.Epoch storage newEpoch = checks.epochs[newEpochIndex];
+
+        if (
+            // Initialize the next epoch or
+            newEpoch.blockNumber == 0 ||
+            // Reinitialize it if it's not been resolved in time.
+            newEpoch.blockNumber < block.number - 256
+        ) {
+            // Set the minimum wait time until resolve.
+            newEpoch.blockNumber = uint64(block.number + 5);
+        }
+        // Advance the epoch if we've waited long enough.
+        else if (newEpoch.blockNumber < block.number) {
+            // Set the source of randomness for our last epoch.apply
+            newEpoch.randomness = uint128(uint256(blockhash(newEpoch.blockNumber)));
+
+            checks.epoch = newEpochIndex;
+
+            return nextEpoch();
+        }
+
+        return (newEpochIndex, newEpoch);
+    }
+
     /// @notice Migrate Checks Editions to Checks Originals by burning the Editions.
     ///         Requires the Approval of this contract on the Edition contract.
     /// @param tokenIds The Edition token IDs you want to migrate.
@@ -53,7 +82,7 @@ contract Checks is IChecks, CHECKS721, WithEpochs {
         uint256 count = tokenIds.length;
 
         // Get the epoch for this token
-        (uint256 nextEpochIndex, Epoch memory nextEpoch) = nextEpoch();
+        (uint256 nextEpochIndex,) = nextEpoch();
 
         // Burn the Editions for the given tokenIds & mint the Originals.
         for (uint256 i; i < count;) {
@@ -279,18 +308,19 @@ contract Checks is IChecks, CHECKS721, WithEpochs {
             )));
 
             // We take the smallest gradient in 20% of cases, or continue as random checks.
-            toKeep.gradients[toKeep.divisorIndex] = Utilities.random(randomizer, 100) > 80
+            toKeep.gradients[toKeep.divisorIndex - 1] = Utilities.random(randomizer, 100) > 80
                 ? Utilities.minGt0(toKeep.gradients[divisorIndex], toBurn.gradients[divisorIndex])
                 : Utilities.min(toKeep.gradients[divisorIndex], toBurn.gradients[divisorIndex]);
 
             // We breed the lower end average color band when breeding.
-            toKeep.colorBands[toKeep.divisorIndex] = Utilities.avg(
+            toKeep.colorBands[toKeep.divisorIndex - 1] = Utilities.avg(
                 toKeep.colorBands[divisorIndex],
                 toBurn.colorBands[divisorIndex]
             );
 
-            // Coin-toss keep either one or the other animation setting.
-            toKeep.animation = (randomizer % 2 == 1) ? toKeep.animation : toBurn.animation;
+            // TODO: Figure out animation breeding
+            // // Coin-toss keep either one or the other animation setting.
+            // toKeep.animation = (randomizer % 2 == 1) ? toKeep.animation : toBurn.animation;
         }
 
         // Perform the burn.
