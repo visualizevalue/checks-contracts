@@ -61,8 +61,13 @@ library ChecksArt {
         IChecks.StoredCheck memory stored = checks.all[tokenId];
         uint8 divisorIndex = stored.divisorIndex;
 
+        console.log('stored.epoch');
+        console.log(stored.epoch);
+
         uint128 randomness = checks.epochs[stored.epoch].randomness;
-        uint256 seed = Utilities.random(uint256(keccak256(abi.encodePacked(randomness, tokenId))), type(uint256).max);
+        console.log('randomness');
+        console.log(randomness);
+        check.seed = Utilities.random(uint256(keccak256(abi.encodePacked(randomness, tokenId))), type(uint256).max);
 
         check.stored = stored;
         check.isRevealed = randomness > 0;
@@ -71,17 +76,17 @@ library ChecksArt {
         check.checksCount = DIVISORS()[divisorIndex];
         check.composite = !check.isRoot && divisorIndex < 7 ? stored.composites[divisorIndex - 1] : 0;
         check.colorBand = check.isRoot
-            ? _band(seed + 1)
+            ? _band(check.seed + 1)
             : check.hasManyChecks
                 ? COLOR_BANDS()[stored.colorBands[divisorIndex]]
                 : 1;
         check.gradient = check.isRoot
-            ? _gradient(seed + 2)
+            ? _gradient(check.seed + 2)
             : check.hasManyChecks
                 ? GRADIENTS()[stored.gradients[divisorIndex]]
                 : 0;
-        check.direction = uint8(seed % 2);
-        check.speed = uint8(2**(seed % 3));
+        check.direction = uint8(check.seed % 2);
+        check.speed = uint8(2**(check.seed % 3));
     }
 
     /// @dev Generate indexes for the color slots of check parents (up to the EightyColors.COLORS themselves).
@@ -95,7 +100,7 @@ library ChecksArt {
     {
         uint8[8] memory divisors = DIVISORS();
         uint256 checksCount = divisors[divisorIndex];
-        uint32 seed = check.seed;
+        uint256 seed = check.seed;
         uint8 gradient = check.gradient;
         uint8 colorBand = check.colorBand;
 
@@ -358,6 +363,7 @@ library ChecksArt {
         data.colors = colors_;
         data.gridColor = data.isBlack ? '#F2F2F2' : '#191919';
         data.canvasColor = data.isBlack ? '#FFF' : '#111';
+        console.log(colors_[0]);
 
         // Compute positioning data.
         data.scale = data.count > 20 ? '1' : data.count > 1 ? '2' : '3';

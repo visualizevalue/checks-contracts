@@ -2,27 +2,26 @@
 pragma solidity ^0.8.17;
 
 /**
+
  /////////////////////////
  //                     //
- //       M I N T       //
+ //                     //
+ //     C O M M I T     //
  //                     //
  //         ↓↓          //
  //         ↓↓          //
  //         ↓↓          //
  //                     //
- //       ✓ ✓ ✓ ✓       //
- //       ✓ ✓ ✓ ✓       //
- //       ✓ ✓ ✓ ✓       //
- //       ✓ ✓ ✓ ✓       //
- //       ✓ ✓ ✓ ✓       //
+ //     R E V E A L     //
+ //                     //
  //                     //
  /////////////////////////
 
 @title  WithEpochs
-@author VisualizeValue
-@notice Powers the mint commit → reveal scheme for checks.
+@author mousedev.eth 🐭, jalil.eth
+@notice Onchain sources of randomness via future commitments.
 */
-contract WithEpochs {
+abstract contract WithEpochs {
     uint256 internal epochIndex = 0;
 
     mapping(uint256 => Epoch) internal epochs;
@@ -36,9 +35,9 @@ contract WithEpochs {
         Epoch storage newEpoch = epochs[newEpochIndex];
 
         if (
-            // Initialize the next epoch or
+            // Initialize the next epoch
             newEpoch.blockNumber == 0 ||
-            // Reinitialize it if it's not been resolved in time.
+            // Or reinitialize it if it's not been resolved in time.
             newEpoch.blockNumber < block.number - 256
         ) {
             // Set the minimum wait time until resolve.
@@ -50,6 +49,8 @@ contract WithEpochs {
             newEpoch.randomness = uint128(uint256(blockhash(newEpoch.blockNumber)));
 
             epochIndex = newEpochIndex;
+
+            return nextEpoch();
         }
 
         return (newEpochIndex, newEpoch);

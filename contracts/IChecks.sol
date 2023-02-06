@@ -17,12 +17,12 @@ interface IChecks {
 
     struct Check {
         StoredCheck stored;
+        uint256 seed;         // The seed enables pseudo-randomisation
         uint16 composite;       // The parent tokenId that was composited into this one
         bool isRevealed;        // Whether it is revealed
         bool isRoot;           // Whether it has 80 checks
         bool hasManyChecks;    // Quick access for whether the check has many checks
         uint8 checksCount;    // How many checks this token has
-        uint32 seed;         // The seed enables pseudo-randomisation
         uint8 colorBand;    // 100%, 50%, 25%, 12.5%, 6.25%, 5%, 1.25%
         uint8 gradient;    // Linearly through the colorBand [1, 2, 3]
         uint8 direction;  // Animation direction

@@ -143,9 +143,11 @@ describe('Checks', () => {
 
       console.log(await checks.getCheck(toKeep))
 
-      await time.increase(61)
-      const tx = await checks.nextEpoch()
-      await tx.wait()
+      // await hre.network.provider.send("hardhat_mine", ["0x101"]);
+      await hre.network.provider.send("hardhat_mine", ["0x5"]);
+
+      console.log(await checks.getCheck(toKeep))
+      console.log(await (await checks.nextEpoch()).wait())
 
       console.log(await checks.getCheck(toKeep))
 
