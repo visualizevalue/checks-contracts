@@ -2,13 +2,13 @@ import { loadFixture } from '@nomicfoundation/hardhat-network-helpers'
 import { parseEther } from 'ethers/lib/utils'
 import { JACK, JALIL, JALIL_TOKENS, TOP_HOLDERS, VV, VV_TOKENS } from '../../helpers/constants'
 import { impersonate } from '../../helpers/impersonate'
-import { deployChecks } from './deploy'
+import { deployChecksMainnet } from './deploy'
 import { impersonateAccounts } from './impersonate'
 import hre from 'hardhat'
 import { composite } from '../../helpers/composite'
 
 export async function mintedFixture() {
-  const { checksEditions, checks } = await loadFixture(deployChecks)
+  const { checksEditions, checks } = await loadFixture(deployChecksMainnet)
   const { jalil, vv } = await loadFixture(impersonateAccounts)
 
   await checksEditions.connect(jalil).setApprovalForAll(checks.address, true)
@@ -25,7 +25,7 @@ export async function mintedFixture() {
 }
 
 export async function prepareBlackCheckFixture() {
-  const { checksEditions, checks } = await loadFixture(deployChecks)
+  const { checksEditions, checks } = await loadFixture(deployChecksMainnet)
   const jack = await impersonate(JACK, hre)
 
   const allTokens = []

@@ -1,6 +1,6 @@
 import fs from 'fs'
 import { loadFixture, time } from '@nomicfoundation/hardhat-network-helpers'
-import { deployChecks } from './fixtures/deploy'
+import { deployChecksMainnet } from './fixtures/deploy'
 import { impersonateAccounts } from './fixtures/impersonate'
 import { blackCheckFixture, mintedFixture } from './fixtures/mint'
 import { composite } from '../helpers/composite'
@@ -12,7 +12,7 @@ const ethers = hre.ethers
 
 describe('Checks', () => {
   it('Should deploy checks', async () => {
-    const { checks } = await loadFixture(deployChecks)
+    const { checks } = await loadFixture(deployChecksMainnet)
 
     expect(await checks.editionChecks()).to.equal('0x34eEBEE6942d8Def3c125458D1a86e0A897fd6f9')
 
@@ -22,7 +22,7 @@ describe('Checks', () => {
 
   describe('Mint', () => {
     it('Should allow to mint originals', async () => {
-      const { checksEditions, checks } = await loadFixture(deployChecks)
+      const { checksEditions, checks } = await loadFixture(deployChecksMainnet)
       const { jalil } = await loadFixture(impersonateAccounts)
 
       expect(await checks.totalSupply()).to.equal(0)
@@ -66,7 +66,7 @@ describe('Checks', () => {
     })
 
     it('Should set the token birth date correctly at mint', async () => {
-      const { checksEditions, checks } = await loadFixture(deployChecks)
+      const { checksEditions, checks } = await loadFixture(deployChecksMainnet)
       const { jalil } = await loadFixture(impersonateAccounts)
 
       // First we need to approve the Originals contract on the Editions contract
@@ -87,7 +87,7 @@ describe('Checks', () => {
     })
 
     it('Should allow to mint many originals at once', async () => {
-      const { checksEditions, checks } = await loadFixture(deployChecks)
+      const { checksEditions, checks } = await loadFixture(deployChecksMainnet)
       const { vv } = await loadFixture(impersonateAccounts)
 
       await checksEditions.connect(vv).setApprovalForAll(checks.address, true)

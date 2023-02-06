@@ -12,6 +12,12 @@ contract ZoraEdition is ERC721Burnable {
         _mint(msg.sender, _tokenId);
     }
 
+    function mintAmount(uint256 amount) public {
+        for (uint i = 0; i < amount; i++) {
+            _mint(msg.sender, i + 1);
+        }
+    }
+
     /// @dev Error when burning unapproved tokens.
     error TransferCallerNotOwnerNorApproved();
 }

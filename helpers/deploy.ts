@@ -1,4 +1,4 @@
-export const deployChecksWithLibraries = async (ethers) => {
+export const deployChecksWithLibraries = async (ethers, editionAddress = process.env.EDITION_ADDRESS) => {
   const Utilities = await ethers.getContractFactory('Utilities')
   const utils = await Utilities.deploy()
   await utils.deployed()
@@ -36,7 +36,7 @@ export const deployChecksWithLibraries = async (ethers) => {
       ChecksMetadata: checksMetadata.address,
     }
   })
-  const checks = await ChecksOriginals.deploy()
+  const checks = await ChecksOriginals.deploy(editionAddress)
   await checks.deployed()
   console.log(`     Deployed ChecksOriginals at ${checks.address}`)
 
