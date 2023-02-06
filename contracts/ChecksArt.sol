@@ -59,14 +59,26 @@ library ChecksArt {
         IChecks.StoredCheck memory stored = checks.all[tokenId];
         uint8 divisorIndex = stored.divisorIndex;
 
+        uint128 randomness = checks.epochs[stored.epoch].randomness;
+        uint256 seed = Utilities.random(randomness + tokenId, type(uint256).max);
+
         check.stored = stored;
+        check.isRoot = divisorIndex == 0;
         check.hasManyChecks = divisorIndex < 6;
         check.checksCount = DIVISORS()[divisorIndex];
-        check.composite = divisorIndex > 0 && divisorIndex < 7 ? stored.composites[divisorIndex - 1] : 0;
-        check.colorBand = check.hasManyChecks ? COLOR_BANDS()[stored.colorBands[divisorIndex]] : 1;
-        check.gradient  = check.hasManyChecks ? GRADIENTS()[stored.gradients[divisorIndex]] : 0;
-        check.direction = uint8(stored.animation % 2);
-        check.speed = uint8(2**(stored.animation % 3));
+        check.composite = !check.isRoot && divisorIndex < 7 ? stored.composites[divisorIndex - 1] : 0;
+        check.colorBand = check.isRoot
+            ? _band(seed + 1)
+            : check.hasManyChecks
+                ? COLOR_BANDS()[stored.colorBands[divisorIndex]]
+                : 1;
+        check.gradient = check.isRoot
+            ? _gradient(seed + 2)
+            : check.hasManyChecks
+                ? GRADIENTS()[stored.gradients[divisorIndex]]
+                : 0;
+        check.direction = uint8(seed % 2);
+        check.speed = uint8(2**(seed % 3));
     }
 
     /// @dev Generate indexes for the color slots of check parents (up to the EightyColors.COLORS themselves).
@@ -80,7 +92,7 @@ library ChecksArt {
     {
         uint8[8] memory divisors = DIVISORS();
         uint256 checksCount = divisors[divisorIndex];
-        uint32 seed = check.stored.seed;
+        uint32 seed = check.seed;
         uint8 gradient = check.gradient;
         uint8 colorBand = check.colorBand;
 
@@ -408,6 +420,29 @@ library ChecksArt {
                 '</rect>',
             '</svg>'
         );
+    }
+
+    /// @dev Get the index for a token color band based on a number between 1 and 160.
+    /// @param seed The seed to base the index on.
+    function _band(uint256 seed) public pure returns(uint8) {
+        uint256 i = Utilities.random(seed, 160);
+
+        return i > 80 ? 0
+             : i > 40 ? 1
+             : i > 20 ? 2
+             : i > 10 ? 3
+             : i >  8 ? 4
+             : i >  2 ? 5
+             : 6;
+    }
+
+    /// @dev Get the index for a token gradient based on a number between 1 and 100.
+    /// @param seed The seed to base the index on.
+    function _gradient(uint256 seed) internal pure returns(uint8) {
+        uint256 i = Utilities.random(seed, 160);
+
+        return i > 10 ? 0
+             : uint8(1 + (i % 6));
     }
 }
 

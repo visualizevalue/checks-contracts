@@ -6,8 +6,8 @@ import "./ChecksArt.sol";
 import "./ChecksMetadata.sol";
 import "./IChecks.sol";
 import "./IChecksEdition.sol";
-import "./Randomizer.sol";
 import "./Utilities.sol";
+import "./WithEpochs.sol";
 
 /**
 ✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
@@ -31,7 +31,7 @@ import "./Utilities.sol";
 @author VisualizeValue
 @notice This artwork is notable.
 */
-contract Checks is IChecks, CHECKS721, Randomizer {
+contract Checks is IChecks, CHECKS721, WithEpochs {
 
     /// @notice The VV Checks Edition contract.
     IChecksEdition public editionChecks;
@@ -52,8 +52,8 @@ contract Checks is IChecks, CHECKS721, Randomizer {
     function mint(uint256[] calldata tokenIds, address recipient) external {
         uint256 count = tokenIds.length;
 
-        // We need a base seed for pseudo-randomization.
-        uint256 randomizer = Utilities.seed(checks.minted + checks.burned);
+        // Get the epoch for this token
+        (uint256 nextEpochIndex, Epoch memory nextEpoch) = nextEpoch();
 
         // Burn the Editions for the given tokenIds & mint the Originals.
         for (uint256 i; i < count;) {
@@ -72,17 +72,9 @@ contract Checks is IChecks, CHECKS721, Randomizer {
 
             // Initialize our Check.
             StoredCheck storage check = checks.all[id];
-            check.divisorIndex = 0;
-
-            // Randomized input with a uint32 max value.
-            uint256 seed = (randomizer + id) % 4294967296;
-
-            // Check genome.
-            check.colorBands[0] = _band(Utilities.random(seed + 1, 160));
-            check.gradients[0] = _gradient(Utilities.random(seed + 2, 100));
-            check.animation = uint8(Utilities.random(seed + 3, 100));
             check.day = Utilities.day(checks.day0, block.timestamp);
-            check.seed = uint32(seed);
+            check.epoch = uint32(nextEpochIndex);
+            check.divisorIndex = 0;
 
             // Mint the original.
             // If we're minting to a vault, transfer it there.

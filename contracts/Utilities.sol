@@ -57,7 +57,7 @@ library Utilities {
     }
 
     /// @dev Get the days since another date (input is seconds)
-    function day(uint256 from, uint256 to) public pure returns (uint16) {
-        return uint16((to - from) / 24 hours + 1);
+    function day(uint256 from, uint256 to) public pure returns (uint24) {
+        return uint24((to - from) / 24 hours + 1);
     }
 }
