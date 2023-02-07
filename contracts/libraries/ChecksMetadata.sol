@@ -47,9 +47,11 @@ library ChecksMetadata {
                     '",',
                 '"attributes": [',
                     check.hasManyChecks
+                        // FIXME: get the correct color band when divisor is 0
                         ? trait('Color Band', colorBand(check.stored.colorBands[check.stored.divisorIndex]), ',')
                         : '',
                     check.hasManyChecks
+                        // FIXME: get the correct gradient index when divisor is 0
                         ? trait('Gradient', gradients(check.stored.gradients[check.stored.divisorIndex]), ',')
                         : '',
                     check.checksCount > 0

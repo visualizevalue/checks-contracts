@@ -46,9 +46,14 @@ library Utilities {
             : one;
     }
 
-    /// @dev Get the smallest number
+    /// @dev Get the smaller number
     function min(uint8 one, uint8 two) public pure returns (uint8) {
         return one < two ? one : two;
+    }
+
+    /// @dev Get the larger number
+    function max(uint8 one, uint8 two) public pure returns (uint8) {
+        return one > two ? one : two;
     }
 
     /// @dev Get the average between two numbers

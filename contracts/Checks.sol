@@ -362,9 +362,11 @@ contract Checks is IChecks, CHECKS721 {
         // Pseudorandom gene manipulation in which the composite order doesn't matter.
         uint256 randomizer = uint256(keeper.seed) + uint256(burner.seed);
 
-        // We take the smallest gradient in 20% of cases, or continue as random checks.
+        // We try to force a gradient in ~20% of cases.
         gradient = Utilities.random(randomizer, 100) > 80
-            ? Utilities.minGt0(keeper.gradient, burner.gradient)
+            ? randomizer % 2 == 0
+                ? Utilities.minGt0(keeper.gradient, burner.gradient)
+                : Utilities.max(keeper.gradient, burner.gradient)
             : Utilities.min(keeper.gradient, burner.gradient);
 
         // We breed the lower end average color band when breeding.
