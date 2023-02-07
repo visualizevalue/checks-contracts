@@ -47,12 +47,10 @@ library ChecksMetadata {
                     '",',
                 '"attributes": [',
                     check.hasManyChecks
-                        // FIXME: get the correct color band when divisor is 0
-                        ? trait('Color Band', colorBand(check.stored.colorBands[check.stored.divisorIndex]), ',')
+                        ? trait('Color Band', colorBand(ChecksArt.colorBandIndex(check, check.stored.divisorIndex)), ',')
                         : '',
                     check.hasManyChecks
-                        // FIXME: get the correct gradient index when divisor is 0
-                        ? trait('Gradient', gradients(check.stored.gradients[check.stored.divisorIndex]), ',')
+                        ? trait('Gradient', gradients(ChecksArt.gradientIndex(check, check.stored.divisorIndex)), ',')
                         : '',
                     check.checksCount > 0
                         ? trait('Speed', check.speed == 4 ? '2x' : check.speed == 2 ? '1x' : '0.5x', ',')
