@@ -55,7 +55,7 @@ contract Checks is IChecks, CHECKS721 {
         return checks.epochs[index];
     }
 
-    /// @dev Based on MouseDev's commit-reveal scheme.
+    /// @dev Based on MouseDev's commit-reveal scheme 🐭.
     function resolveEpochIfNecessary() public {
         IChecks.Epoch storage currentEpoch = checks.epochs[checks.epoch];
 

@@ -18,7 +18,7 @@ pragma solidity ^0.8.17;
  /////////////////////////
 
 @title  WithEpochs
-@author mousedev.eth 🐭, jalil.eth
+@author mousedev.eth 🐭
 @notice Onchain sources of randomness via future commitments.
 */
 
@@ -29,8 +29,7 @@ struct Epoch {
     bool revealed;
 }
 
-
-abstract contract WithEpochs {
+contract WithEpochs {
     uint256 public epochIndex = 1;
 
     mapping(uint256 => Epoch) public epochs;
