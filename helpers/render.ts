@@ -21,3 +21,16 @@ export const fetchAndRender = async (
     await contract.svg(id)
   )
 }
+
+export const fetchAndRenderPreview = async (
+  id: number,
+  burn: number,
+  contract: Contract,
+) => {
+  const check = await contract.simulateComposite(id, burn)
+
+  fs.writeFileSync(
+    `test/dist/${check.checksCount}_${id}_b${check.colorBand}_g${check.gradient}_s${check.speed}_d${check.direction}_preview.svg`,
+    await contract.simulateCompositeSVG(id, burn)
+  )
+}

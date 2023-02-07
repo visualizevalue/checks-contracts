@@ -31,7 +31,7 @@ library ChecksMetadata {
     ) public view returns (string memory) {
         IChecks.Check memory check = ChecksArt.getCheck(tokenId, checks);
 
-        bytes memory svg = ChecksArt.generateSVG(tokenId, checks);
+        bytes memory svg = ChecksArt.generateSVG(check, checks);
 
         bytes memory metadata = abi.encodePacked(
             '{',

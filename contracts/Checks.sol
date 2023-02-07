@@ -8,8 +8,6 @@ import "./libraries/ChecksMetadata.sol";
 import "./libraries/Utilities.sol";
 import "./standards/CHECKS721.sol";
 
-// import "hardhat/console.sol";
-
 /**
 ✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
 ✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
@@ -47,15 +45,15 @@ contract Checks is IChecks, CHECKS721 {
         checks.epoch = 1;
     }
 
-    function epochIndex() view public returns(uint256) {
+    function getEpoch() view public returns(uint256) {
         return checks.epoch;
     }
 
-    function getEpoch(uint256 index) view public returns(IChecks.Epoch memory) {
+    function getEpochData(uint256 index) view public returns(IChecks.Epoch memory) {
         return checks.epochs[index];
     }
 
-    /// @dev Based on MouseDev's commit-reveal scheme 🐭.
+    /// @dev Based on the commit-reveal scheme proposed by MouseDev.
     function resolveEpochIfNecessary() public {
         IChecks.Epoch storage currentEpoch = checks.epochs[checks.epoch];
 
@@ -110,9 +108,9 @@ contract Checks is IChecks, CHECKS721 {
 
             // Initialize our Check.
             StoredCheck storage check = checks.all[id];
-            check.seed = Utilities.seed16(id);
             check.day = Utilities.day(checks.day0, block.timestamp);
             check.epoch = uint32(checks.epoch);
+            check.seed = Utilities.seed16(id);
             check.divisorIndex = 0;
 
             // Mint the original.
@@ -256,7 +254,37 @@ contract Checks is IChecks, CHECKS721 {
     function svg(uint256 tokenId) external view returns (string memory) {
         _requireMinted(tokenId);
 
-        return string(ChecksArt.generateSVG(tokenId, checks));
+        return string(ChecksArt.generateSVG(ChecksArt.getCheck(tokenId, checks), checks));
+    }
+
+    /// @notice Simulate a composite.
+    /// @param tokenId The token to render.
+    /// @param burnId The token to composite.
+    function simulateComposite(uint256 tokenId, uint256 burnId) public view returns (Check memory check) {
+        _requireMinted(tokenId);
+        _requireMinted(burnId);
+
+        uint8 divisorIndex = checks.all[tokenId].divisorIndex;
+
+        check = ChecksArt.getCheck(tokenId, divisorIndex + 1, checks);
+        (uint8 gradient, uint8 colorBand) = _compositeGenes(tokenId, burnId);
+
+        // Overrides
+        check.stored.gradients[divisorIndex] = gradient;
+        check.stored.colorBands[divisorIndex] = colorBand;
+        check.stored.composites[divisorIndex] = uint16(burnId);
+
+        // More overrides
+        check.composite = !check.isRoot && divisorIndex < 7 ? check.stored.composites[divisorIndex] : 0;
+        check.colorBand = ChecksArt.colorBandIndex(check, divisorIndex + 1);
+        check.gradient = ChecksArt.gradientIndex(check, divisorIndex + 1);
+    }
+
+    /// @notice Render the SVG for a simulated composite.
+    /// @param tokenId The token to render.
+    /// @param burnId The token to composite.
+    function simulateCompositeSVG(uint256 tokenId, uint256 burnId) external view returns (string memory) {
+        return string(ChecksArt.generateSVG(simulateComposite(tokenId, burnId), checks));
     }
 
     /// @notice Get the metadata for a given token.
@@ -304,28 +332,12 @@ contract Checks is IChecks, CHECKS721 {
 
         uint8 nextDivisor = divisorIndex + 1;
 
+        // We only need to breed band + gradient up until 4-Checks.
         if (divisorIndex < 5) {
-            Check memory keeper = ChecksArt.getCheck(tokenId, checks);
-            Check memory burner = ChecksArt.getCheck(burnId, checks);
+            (uint8 gradient, uint8 colorBand) = _compositeGenes(tokenId, burnId);
 
-            // Need a randomizer for gene manipulation.
-            // uint256 randomizer = Utilities.seed(checks.burned);
-            uint256 randomizer = uint256(keccak256(abi.encodePacked(keeper.seed, burner.seed)));
-
-            // We take the smallest gradient in 20% of cases, or continue as random checks.
-            toKeep.gradients[divisorIndex] = Utilities.random(randomizer, 100) > 80
-                ? Utilities.minGt0(keeper.gradient, burner.gradient)
-                : Utilities.min(keeper.gradient, burner.gradient);
-
-            // We breed the lower end average color band when breeding.
-            toKeep.colorBands[divisorIndex] = Utilities.avg(
-                keeper.colorBand,
-                burner.colorBand
-            );
-
-            // TODO: Figure out animation breeding
-            // // Coin-toss keep either one or the other animation setting.
-            // toKeep.animation = (randomizer % 2 == 1) ? toKeep.animation : toBurn.animation;
+            toKeep.gradients[divisorIndex] = gradient;
+            toKeep.colorBands[divisorIndex] = colorBand;
         }
 
         // Composite our check
@@ -339,6 +351,27 @@ contract Checks is IChecks, CHECKS721 {
         // Notify DAPPs about the Composite.
         emit IChecks.Composite(tokenId, burnId, ChecksArt.DIVISORS()[toKeep.divisorIndex]);
         emit MetadataUpdate(tokenId);
+    }
+
+    function _compositeGenes (uint256 tokenId, uint256 burnId) internal view
+        returns (uint8 gradient, uint8 colorBand)
+    {
+        Check memory keeper = ChecksArt.getCheck(tokenId, checks);
+        Check memory burner = ChecksArt.getCheck(burnId, checks);
+
+        // Pseudorandom gene manipulation in which the composite order doesn't matter.
+        uint256 randomizer = uint256(keeper.seed) + uint256(burner.seed);
+
+        // We take the smallest gradient in 20% of cases, or continue as random checks.
+        gradient = Utilities.random(randomizer, 100) > 80
+            ? Utilities.minGt0(keeper.gradient, burner.gradient)
+            : Utilities.min(keeper.gradient, burner.gradient);
+
+        // We breed the lower end average color band when breeding.
+        colorBand = Utilities.avg(
+            keeper.colorBand,
+            burner.colorBand
+        );
     }
 
     /// @dev Make sure this is a valid request to composite/switch with multiple tokens.
@@ -376,24 +409,5 @@ contract Checks is IChecks, CHECKS721 {
         ) {
             revert NotAllowed();
         }
-    }
-
-    /// @dev Get the index for a token gradient based on a number between 1 and 100.
-    /// @param input The pseudorandom input to base the index on.
-    function _gradient(uint256 input) internal pure returns(uint8) {
-        return input > 10 ? 0
-             : uint8(1 + (input % 6));
-    }
-
-    /// @dev Get the index for a token color band based on a number between 1 and 160.
-    /// @param input The pseudorandom input to base the index on.
-    function _band(uint256 input) internal pure returns(uint8) {
-        return input > 80 ? 0
-             : input > 40 ? 1
-             : input > 20 ? 2
-             : input > 10 ? 3
-             : input >  8 ? 4
-             : input >  2 ? 5
-             : 6;
     }
 }

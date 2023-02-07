@@ -9,13 +9,6 @@ library Utilities {
         ) % type(uint16).max);
     }
 
-    /// @dev Create a pseudo random number
-    function seed(uint256 nonce) public view returns (uint256) {
-        return uint256(
-            keccak256(abi.encodePacked(msg.sender, block.coinbase, nonce))
-        );
-    }
-
     /// @dev Pseudorandom number based on input max bound
     function random(uint256 input, uint256 max) public pure returns (uint256) {
         return max - (uint256(keccak256(abi.encodePacked(input))) % max);
@@ -50,22 +43,13 @@ library Utilities {
             ? two > 0
                 ? two
                 : one
-            : two;
+            : one;
     }
 
     /// @dev Get the smallest number
     function min(uint8 one, uint8 two) public pure returns (uint8) {
         return one < two ? one : two;
     }
-
-    // /// @dev Get the average between two numbers
-    // function avg(uint8 one, uint8 two) public pure returns (uint8) {
-    //     return (one & two) + (one ^ two) / 2;
-    // }
-    // function avg(uint8 one, uint8 two) public pure returns (uint8) {
-    //     uint8 inc = one == two && ((one - two) % 2 == 1) ? 0 : 1;
-    //     return (one & two) + (one ^ two) / 2 + inc;
-    // }
 
     /// @dev Get the average between two numbers
     function avg(uint8 one, uint8 two) public pure returns (uint8 result) {

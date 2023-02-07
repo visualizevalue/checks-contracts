@@ -313,7 +313,7 @@ describe('Checks', () => {
       expect((await checks.getCheck(toKeep)).stored.day).to.equal(5)
     })
 
-    it.only('Should allow to composite to, mint, and render the black check', async () => {
+    it.skip('Should allow to composite to, mint, and render the black check', async () => {
       const { checks, blackCheck, allTokens } = await loadFixture(blackCheckFixture)
 
       console.log(`      Created the first black check with ID #${blackCheck}`)

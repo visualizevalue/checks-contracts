@@ -1,6 +1,16 @@
 import { task } from 'hardhat/config'
 import { VV_TOKENS } from '../helpers/constants'
-import { fetchAndRender } from '../helpers/render'
+import { fetchAndRender, fetchAndRenderPreview } from '../helpers/render'
+
+task('render-preview', 'Composite VV tokens')
+  .addParam('contract', 'The Checks Contract address')
+  .addParam('keep', 'The Check to keep')
+  .addParam('burn', 'The Check to burn')
+  .setAction(async ({ contract, keep, burn }, hre) => {
+    const checks = await hre.ethers.getContractAt('Checks', contract)
+
+    await fetchAndRenderPreview(keep, burn, checks)
+  })
 
 task('render', 'Mint VV tokens')
   .addParam('contract', 'The Checks Contract address')
@@ -8,7 +18,7 @@ task('render', 'Mint VV tokens')
   .setAction(async ({ contract, id }, hre) => {
     const checks = await hre.ethers.getContractAt('Checks', contract)
 
-    // console.log(await checks.getEpoch(1))
+    // console.log(await checks.getEpochData(1))
     // console.log(await checks.getCheck(VV_TOKENS[0]))
 
     if (id) {

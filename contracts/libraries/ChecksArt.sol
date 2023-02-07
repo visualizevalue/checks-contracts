@@ -59,16 +59,22 @@ library ChecksArt {
         uint256 tokenId, IChecks.Checks storage checks
     ) public view returns (IChecks.Check memory check) {
         IChecks.StoredCheck memory stored = checks.all[tokenId];
-        uint8 divisorIndex = stored.divisorIndex;
 
-        // console.log('stored.epoch');
-        // console.log(stored.epoch);
+        return getCheck(tokenId, stored.divisorIndex, checks);
+    }
+
+    /// @dev Load a check from storage and fill its current state settings.
+    /// @param tokenId The id of the check to fetch.
+    /// @param divisorIndex The divisorindex to get.
+    /// @param checks The DB containing all checks.
+    function getCheck(
+        uint256 tokenId, uint8 divisorIndex, IChecks.Checks storage checks
+    ) public view returns (IChecks.Check memory check) {
+        IChecks.StoredCheck memory stored = checks.all[tokenId];
+        stored.divisorIndex = divisorIndex; // Override...
 
         uint128 randomness = checks.epochs[stored.epoch].randomness;
         check.seed = uint128(uint256(keccak256(abi.encodePacked(randomness, stored.seed))) % type(uint128).max);
-        // console.log('tokenId', tokenId);
-        // console.log('check.seed', check.seed);
-
         check.stored = stored;
         check.isRevealed = randomness > 0;
         check.isRoot = divisorIndex == 0;
@@ -82,18 +88,30 @@ library ChecksArt {
     }
 
     function gradientIndex(IChecks.Check memory check, uint8 divisorIndex) public pure returns (uint8) {
+        uint256 n = Utilities.random(check.seed, 160);
+
         return divisorIndex == 0
-            ? _gradient(check.seed + 2)
+            ? n < 20 ? 0 : uint8(1 + (n % 6))
             : divisorIndex < 6
-                ? check.stored.gradients[check.stored.divisorIndex - 1]
+                ? check.stored.gradients[divisorIndex - 1]
                 : 0;
     }
 
     function colorBandIndex(IChecks.Check memory check, uint8 divisorIndex) public pure returns (uint8) {
+        uint256 n = Utilities.random(check.seed, 160);
+
+        uint8 index = n > 80 ? 0
+             : n > 40 ? 1
+             : n > 20 ? 2
+             : n > 10 ? 3
+             : n >  8 ? 4
+             : n >  2 ? 5
+             : 6;
+
         return divisorIndex == 0
-            ? _band(check.seed + 1)
+            ? index
             : divisorIndex < 6
-                ? check.stored.colorBands[check.stored.divisorIndex - 1]
+                ? check.stored.colorBands[divisorIndex - 1]
                 : 6;
     }
 
@@ -109,7 +127,7 @@ library ChecksArt {
         uint8[8] memory divisors = DIVISORS();
         uint256 checksCount = divisors[divisorIndex];
         uint256 seed = check.seed;
-        uint8 colorBand = COLOR_BANDS()[colorBandIndex(check, divisorIndex)]; // FIXME: We need to get the parents colorband
+        uint8 colorBand = COLOR_BANDS()[colorBandIndex(check, divisorIndex)];
         uint8 gradient = GRADIENTS()[gradientIndex(check, divisorIndex)];
 
         // If we're a composited check, we choose colors only based on
@@ -214,11 +232,11 @@ library ChecksArt {
             return (preRevealColors, preRevealIndexes);
         }
 
-        // console.log('aksjdfc colors');
+        // console.log('before color indexes');
 
         // Fetch the indices on the original color mapping.
         uint256[] memory indexes = colorIndexes(check.stored.divisorIndex, check, checks);
-        // console.log('aksjdfc indexes avlbl');
+        // console.log('after indexes avlbl');
 
         // Map over to get the colors.
         string[] memory checkColors = new string[](indexes.length);
@@ -226,6 +244,8 @@ library ChecksArt {
 
         // Always set the first color.
         checkColors[0] = allColors[indexes[0]];
+
+        // console.log('checkColors[0]', checkColors[0]);
 
         // Resolve each color via their index in EightyColors.COLORS.
         for (uint256 i = 1; i < indexes.length; i++) {
@@ -368,6 +388,7 @@ library ChecksArt {
         data.check = check;
         data.isBlack = check.stored.divisorIndex == 7;
         data.count = data.isBlack ? 1 : DIVISORS()[check.stored.divisorIndex];
+        // console.log('data.count', data.count);
 
         // Compute colors and indexes.
         // console.log('colors_[0]');
@@ -414,13 +435,13 @@ library ChecksArt {
     }
 
     /// @dev Generate the complete SVG code for a given Check.
-    /// @param tokenId The ID of the token to render.
+    /// @param check The check to render.
     /// @param checks The DB containing all checks.
     function generateSVG(
-        uint256 tokenId, IChecks.Checks storage checks
+        IChecks.Check memory check, IChecks.Checks storage checks
     ) public view returns (bytes memory) {
         // console.log('hihi');
-        CheckRenderData memory data = collectRenderData(getCheck(tokenId, checks), checks);
+        CheckRenderData memory data = collectRenderData(check, checks);
 
         // console.log('huhu');
 
@@ -454,28 +475,28 @@ library ChecksArt {
         );
     }
 
-    /// @dev Get the index for a token color band based on a number between 1 and 160.
-    /// @param seed The seed to base the index on.
-    function _band(uint256 seed) public pure returns(uint8) {
-        uint256 i = Utilities.random(seed, 160);
+    // /// @dev Get the index for a token color band based on a number between 1 and 160.
+    // /// @param seed The seed to base the index on.
+    // function _band(uint256 seed) public pure returns(uint8) {
+    //     uint256 i = Utilities.random(seed, 160);
 
-        return i > 80 ? 0
-             : i > 40 ? 1
-             : i > 20 ? 2
-             : i > 10 ? 3
-             : i >  8 ? 4
-             : i >  2 ? 5
-             : 6;
-    }
+    //     return i > 80 ? 0
+    //          : i > 40 ? 1
+    //          : i > 20 ? 2
+    //          : i > 10 ? 3
+    //          : i >  8 ? 4
+    //          : i >  2 ? 5
+    //          : 6;
+    // }
 
-    /// @dev Get the index for a token gradient based on a number between 1 and 100.
-    /// @param seed The seed to base the index on.
-    function _gradient(uint256 seed) internal pure returns(uint8) {
-        uint256 i = Utilities.random(seed, 160);
+    // /// @dev Get the index for a token gradient based on a number between 1 and 100.
+    // /// @param seed The seed to base the index on.
+    // function _gradient(uint256 seed) internal pure returns(uint8) {
+    //     uint256 i = Utilities.random(seed, 160);
 
-        return i > 10 ? 0
-             : uint8(1 + (i % 6));
-    }
+    //     return i > 10 ? 0
+    //          : uint8(1 + (i % 6));
+    // }
 }
 
 /// @dev Bag holding all data relevant for rendering.
