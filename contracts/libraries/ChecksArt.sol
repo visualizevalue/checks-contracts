@@ -5,7 +5,7 @@ import "./EightyColors.sol";
 import "../interfaces/IChecks.sol";
 import "./Utilities.sol";
 
-import "hardhat/console.sol";
+// import "hardhat/console.sol";
 
 /**
 
@@ -65,9 +65,9 @@ library ChecksArt {
         // console.log(stored.epoch);
 
         uint128 randomness = checks.epochs[stored.epoch].randomness;
-        // console.log('randomness');
-        // console.log(randomness);
-        check.seed = Utilities.random(uint256(keccak256(abi.encodePacked(randomness, tokenId))), type(uint256).max);
+        check.seed = uint128(uint256(keccak256(abi.encodePacked(randomness, stored.seed))) % type(uint128).max);
+        // console.log('tokenId', tokenId);
+        // console.log('check.seed', check.seed);
 
         check.stored = stored;
         check.isRevealed = randomness > 0;
@@ -75,18 +75,26 @@ library ChecksArt {
         check.hasManyChecks = divisorIndex < 6;
         check.checksCount = DIVISORS()[divisorIndex];
         check.composite = !check.isRoot && divisorIndex < 7 ? stored.composites[divisorIndex - 1] : 0;
-        check.colorBand = check.isRoot
-            ? _band(check.seed + 1)
-            : check.hasManyChecks
-                ? COLOR_BANDS()[stored.colorBands[divisorIndex]]
-                : 1;
-        check.gradient = check.isRoot
-            ? _gradient(check.seed + 2)
-            : check.hasManyChecks
-                ? GRADIENTS()[stored.gradients[divisorIndex]]
-                : 0;
+        check.colorBand = colorBandIndex(check, divisorIndex);
+        check.gradient = gradientIndex(check, divisorIndex);
         check.direction = uint8(check.seed % 2);
         check.speed = uint8(2**(check.seed % 3));
+    }
+
+    function gradientIndex(IChecks.Check memory check, uint8 divisorIndex) public pure returns (uint8) {
+        return divisorIndex == 0
+            ? _gradient(check.seed + 2)
+            : divisorIndex < 6
+                ? check.stored.gradients[check.stored.divisorIndex - 1]
+                : 0;
+    }
+
+    function colorBandIndex(IChecks.Check memory check, uint8 divisorIndex) public pure returns (uint8) {
+        return divisorIndex == 0
+            ? _band(check.seed + 1)
+            : divisorIndex < 6
+                ? check.stored.colorBands[check.stored.divisorIndex - 1]
+                : 6;
     }
 
     /// @dev Generate indexes for the color slots of check parents (up to the EightyColors.COLORS themselves).
@@ -101,8 +109,8 @@ library ChecksArt {
         uint8[8] memory divisors = DIVISORS();
         uint256 checksCount = divisors[divisorIndex];
         uint256 seed = check.seed;
-        uint8 gradient = check.gradient;
-        uint8 colorBand = check.colorBand;
+        uint8 colorBand = COLOR_BANDS()[colorBandIndex(check, divisorIndex)]; // FIXME: We need to get the parents colorband
+        uint8 gradient = GRADIENTS()[gradientIndex(check, divisorIndex)];
 
         // If we're a composited check, we choose colors only based on
         // the slots available in our parents. Otherwise,
@@ -206,8 +214,11 @@ library ChecksArt {
             return (preRevealColors, preRevealIndexes);
         }
 
+        // console.log('aksjdfc colors');
+
         // Fetch the indices on the original color mapping.
         uint256[] memory indexes = colorIndexes(check.stored.divisorIndex, check, checks);
+        // console.log('aksjdfc indexes avlbl');
 
         // Map over to get the colors.
         string[] memory checkColors = new string[](indexes.length);
@@ -352,18 +363,20 @@ library ChecksArt {
     function collectRenderData(
         IChecks.Check memory check, IChecks.Checks storage checks
     ) public view returns (CheckRenderData memory data) {
+        // console.log('asdf[0]');
         // Carry through base settings.
         data.check = check;
         data.isBlack = check.stored.divisorIndex == 7;
         data.count = data.isBlack ? 1 : DIVISORS()[check.stored.divisorIndex];
 
         // Compute colors and indexes.
+        // console.log('colors_[0]');
         (string[] memory colors_, uint256[] memory colorIndexes_) = colors(check, checks);
+        // console.log('colors_[0]', colors_[0]);
         data.colorIndexes = colorIndexes_;
         data.colors = colors_;
         data.gridColor = data.isBlack ? '#F2F2F2' : '#191919';
         data.canvasColor = data.isBlack ? '#FFF' : '#111';
-        // console.log(colors_[0]);
 
         // Compute positioning data.
         data.scale = data.count > 20 ? '1' : data.count > 1 ? '2' : '3';
@@ -406,7 +419,10 @@ library ChecksArt {
     function generateSVG(
         uint256 tokenId, IChecks.Checks storage checks
     ) public view returns (bytes memory) {
+        // console.log('hihi');
         CheckRenderData memory data = collectRenderData(getCheck(tokenId, checks), checks);
+
+        // console.log('huhu');
 
         return abi.encodePacked(
             '<svg ',

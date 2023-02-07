@@ -1,4 +1,4 @@
-import { loadFixture } from '@nomicfoundation/hardhat-network-helpers'
+import { loadFixture, mine } from '@nomicfoundation/hardhat-network-helpers'
 import { parseEther } from 'ethers/lib/utils'
 import { JACK, JALIL, JALIL_TOKENS, TOP_HOLDERS, VV, VV_TOKENS } from '../../helpers/constants'
 import { impersonate } from '../../helpers/impersonate'
@@ -16,6 +16,9 @@ export async function mintedFixture() {
 
   await checksEditions.connect(vv).setApprovalForAll(checks.address, true)
   await checks.connect(vv).mint(VV_TOKENS, VV)
+
+  await mine(5)
+  await (await checks.resolveEpochIfNecessary()).wait()
 
   return {
     checks,

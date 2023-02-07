@@ -1,3 +1,4 @@
+import { mine } from '@nomicfoundation/hardhat-network-helpers'
 import { Wallet } from 'ethers'
 import { task } from 'hardhat/config'
 import { EDITIONS, VV, VV_TOKENS } from '../helpers/constants'
@@ -18,6 +19,9 @@ task('mint-testing', 'Mint VV tokens')
 
     // Mint all
     await checks.connect(vv).mint(VV_TOKENS, VV)
+
+    await mine(5)
+    await (await checks.resolveEpochIfNecessary()).wait()
 
     console.log(`Minted all ${VV_TOKENS.length} Checks Originals`)
   })

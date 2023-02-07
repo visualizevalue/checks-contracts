@@ -1,5 +1,5 @@
 import fs from 'fs'
-import { loadFixture, time } from '@nomicfoundation/hardhat-network-helpers'
+import { loadFixture, mine, time } from '@nomicfoundation/hardhat-network-helpers'
 import { deployChecksMainnet } from './fixtures/deploy'
 import { impersonateAccounts } from './fixtures/impersonate'
 import { blackCheckFixture, mintedFixture } from './fixtures/mint'
@@ -136,20 +136,10 @@ describe('Checks', () => {
         .to.be.revertedWithCustomError(checks, 'NotAllowed')
     })
 
-    it.only('Should allow people to swap their own tokens', async () => {
+    it('Should allow people to swap their own tokens', async () => {
       const { checks, vv } = await loadFixture(mintedFixture)
 
       const [toKeep, toBurn] = VV_TOKENS.slice(0, 2)
-
-      console.log(await checks.getCheck(toKeep))
-
-      // await hre.network.provider.send("hardhat_mine", ["0x101"]);
-      await hre.network.provider.send("hardhat_mine", ["0x5"]);
-
-      console.log(await checks.getCheck(toKeep))
-      console.log(await (await checks.nextEpoch()).wait())
-
-      console.log(await checks.getCheck(toKeep))
 
       const toBurnSVG = await checks.svg(toBurn)
       const toKeepSVG = await checks.svg(toKeep)
@@ -323,7 +313,7 @@ describe('Checks', () => {
       expect((await checks.getCheck(toKeep)).stored.day).to.equal(5)
     })
 
-    it.skip('Should allow to composite to, mint, and render the black check', async () => {
+    it.only('Should allow to composite to, mint, and render the black check', async () => {
       const { checks, blackCheck, allTokens } = await loadFixture(blackCheckFixture)
 
       console.log(`      Created the first black check with ID #${blackCheck}`)

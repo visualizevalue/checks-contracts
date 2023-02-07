@@ -8,6 +8,9 @@ task('render', 'Mint VV tokens')
   .setAction(async ({ contract, id }, hre) => {
     const checks = await hre.ethers.getContractAt('Checks', contract)
 
+    // console.log(await checks.getEpoch(1))
+    // console.log(await checks.getCheck(VV_TOKENS[0]))
+
     if (id) {
       await fetchAndRender(id, checks)
     } else {

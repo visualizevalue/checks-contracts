@@ -4,10 +4,10 @@ pragma solidity ^0.8.17;
 interface IChecks {
 
     struct StoredCheck {
+        uint16 seed; // We need this for the sacrifices to work.
         uint16[6] composites;  // The tokenIds that were composited into this one
-        // TODO: - only need to store 5...
-        uint8[6] colorBands;  // The length of the used color band in percent
-        uint8[6] gradients;  // Gradient settings for each generation
+        uint8[5] colorBands;  // The length of the used color band in percent
+        uint8[5] gradients;  // Gradient settings for each generation
         uint8 divisorIndex; // Easy access to next / previous divisor
         // uint8 animation;   // Animation seed
         // uint32 seed;      // The seed enables pseudo-randomisation

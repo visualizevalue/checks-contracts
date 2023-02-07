@@ -8,7 +8,7 @@ import "./libraries/ChecksMetadata.sol";
 import "./libraries/Utilities.sol";
 import "./standards/CHECKS721.sol";
 
-import "hardhat/console.sol";
+// import "hardhat/console.sol";
 
 /**
 ✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
@@ -73,7 +73,8 @@ contract Checks is IChecks, CHECKS721 {
         } else if (block.number > currentEpoch.revealBlock) {
             // Epoch has been committed and is within range to be revealed.
             // Set its randomness to the target block
-            currentEpoch.randomness = uint128(uint256(blockhash(currentEpoch.revealBlock)) % (2 ** 128 - 1));
+            // currentEpoch.randomness = uint128(uint256(blockhash(currentEpoch.revealBlock)) % (2 ** 128 - 1));
+            currentEpoch.randomness = 69;
             currentEpoch.revealed = true;
 
             checks.epoch++;
@@ -109,6 +110,7 @@ contract Checks is IChecks, CHECKS721 {
 
             // Initialize our Check.
             StoredCheck storage check = checks.all[id];
+            check.seed = Utilities.seed16(id);
             check.day = Utilities.day(checks.day0, block.timestamp);
             check.epoch = uint32(checks.epoch);
             check.divisorIndex = 0;
@@ -296,40 +298,40 @@ contract Checks is IChecks, CHECKS721 {
     /// @param burnId The token ID to burn in the process.
     function _composite(uint256 tokenId, uint256 burnId) internal {
         (
-            StoredCheck storage toKeep,
-            StoredCheck storage toBurn,
-            uint256 divisorIndex
+            StoredCheck storage toKeep,,
+            uint8 divisorIndex
         ) = _tokenOperation(tokenId, burnId);
 
-        // Composite our check
-        toKeep.day = Utilities.day(checks.day0, block.timestamp);
-        toKeep.composites[divisorIndex] = uint16(burnId);
-        toKeep.divisorIndex += 1;
+        uint8 nextDivisor = divisorIndex + 1;
 
-        if (toKeep.divisorIndex < 6) {
+        if (divisorIndex < 5) {
+            Check memory keeper = ChecksArt.getCheck(tokenId, checks);
+            Check memory burner = ChecksArt.getCheck(burnId, checks);
+
             // Need a randomizer for gene manipulation.
             // uint256 randomizer = Utilities.seed(checks.burned);
-            uint256 randomizer = uint256(keccak256(abi.encodePacked(
-                // keccak256(abi.encodePacked(Randomizer.seedForEpoch(toKeep.epoch), tokenId)),
-                toKeep.divisorIndex,
-                "composite-divisor"
-            )));
+            uint256 randomizer = uint256(keccak256(abi.encodePacked(keeper.seed, burner.seed)));
 
             // We take the smallest gradient in 20% of cases, or continue as random checks.
-            toKeep.gradients[toKeep.divisorIndex - 1] = Utilities.random(randomizer, 100) > 80
-                ? Utilities.minGt0(toKeep.gradients[divisorIndex], toBurn.gradients[divisorIndex])
-                : Utilities.min(toKeep.gradients[divisorIndex], toBurn.gradients[divisorIndex]);
+            toKeep.gradients[divisorIndex] = Utilities.random(randomizer, 100) > 80
+                ? Utilities.minGt0(keeper.gradient, burner.gradient)
+                : Utilities.min(keeper.gradient, burner.gradient);
 
             // We breed the lower end average color band when breeding.
-            toKeep.colorBands[toKeep.divisorIndex - 1] = Utilities.avg(
-                toKeep.colorBands[divisorIndex],
-                toBurn.colorBands[divisorIndex]
+            toKeep.colorBands[divisorIndex] = Utilities.avg(
+                keeper.colorBand,
+                burner.colorBand
             );
 
             // TODO: Figure out animation breeding
             // // Coin-toss keep either one or the other animation setting.
             // toKeep.animation = (randomizer % 2 == 1) ? toKeep.animation : toBurn.animation;
         }
+
+        // Composite our check
+        toKeep.day = Utilities.day(checks.day0, block.timestamp);
+        toKeep.composites[divisorIndex] = uint16(burnId);
+        toKeep.divisorIndex = nextDivisor;
 
         // Perform the burn.
         _burn(burnId);

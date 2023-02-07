@@ -7,7 +7,7 @@ const hre = require('hardhat')
 const ethers = hre.ethers
 
 describe('WithReveal', () => {
-  let signers: SignerWithAddress[];
+  let signers: SignerWithAddress[]
   let signer: SignerWithAddress
 
   before(async () => {

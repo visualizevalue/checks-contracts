@@ -3,6 +3,13 @@ pragma solidity ^0.8.17;
 
 library Utilities {
     /// @dev Create a pseudo random number
+    function seed16(uint256 nonce) public view returns (uint16) {
+        return uint16(uint256(
+            keccak256(abi.encodePacked(msg.sender, block.coinbase, nonce))
+        ) % type(uint16).max);
+    }
+
+    /// @dev Create a pseudo random number
     function seed(uint256 nonce) public view returns (uint256) {
         return uint256(
             keccak256(abi.encodePacked(msg.sender, block.coinbase, nonce))
@@ -51,9 +58,20 @@ library Utilities {
         return one < two ? one : two;
     }
 
+    // /// @dev Get the average between two numbers
+    // function avg(uint8 one, uint8 two) public pure returns (uint8) {
+    //     return (one & two) + (one ^ two) / 2;
+    // }
+    // function avg(uint8 one, uint8 two) public pure returns (uint8) {
+    //     uint8 inc = one == two && ((one - two) % 2 == 1) ? 0 : 1;
+    //     return (one & two) + (one ^ two) / 2 + inc;
+    // }
+
     /// @dev Get the average between two numbers
-    function avg(uint8 one, uint8 two) public pure returns (uint8) {
-        return (one & two) + (one ^ two) / 2;
+    function avg(uint8 one, uint8 two) public pure returns (uint8 result) {
+        unchecked {
+            result = (one >> 1) + (two >> 1) + (one & two & 1);
+        }
     }
 
     /// @dev Get the days since another date (input is seconds)
