@@ -8,6 +8,8 @@ import "./libraries/ChecksMetadata.sol";
 import "./libraries/Utilities.sol";
 import "./standards/CHECKS721.sol";
 
+import "hardhat/console.sol";
+
 /**
 ✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
 ✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓
@@ -45,30 +47,38 @@ contract Checks is IChecks, CHECKS721 {
         checks.epoch = 1;
     }
 
+    function epochIndex() view public returns(uint256) {
+        return checks.epoch;
+    }
+
+    function getEpoch(uint256 index) view public returns(IChecks.Epoch memory) {
+        return checks.epochs[index];
+    }
+
     /// @dev Based on MouseDev's commit-reveal scheme.
-    function advanceEpoch() public {
+    function resolveEpochIfNecessary() public {
         IChecks.Epoch storage currentEpoch = checks.epochs[checks.epoch];
 
         if (
-            // If epoch has not been commited,
-            currentEpoch.commited == false ||
+            // If epoch has not been committed,
+            currentEpoch.committed == false ||
             // Or the reveal commitment timed out.
             (currentEpoch.revealed == false && currentEpoch.revealBlock < block.number - 256)
         ) {
-            // This means the epoch has not been commited, OR the epoch was commited but has expired.
-            // Set commited to true, and record the reveal block.
+            // This means the epoch has not been committed, OR the epoch was committed but has expired.
+            // Set committed to true, and record the reveal block.
             currentEpoch.revealBlock = uint64(block.number + 5);
-            currentEpoch.commited = true;
+            currentEpoch.committed = true;
 
         } else if (block.number > currentEpoch.revealBlock) {
-            // Epoch has been commited and is within range to be revealed.
+            // Epoch has been committed and is within range to be revealed.
             // Set its randomness to the target block
             currentEpoch.randomness = uint128(uint256(blockhash(currentEpoch.revealBlock)) % (2 ** 128 - 1));
             currentEpoch.revealed = true;
 
             checks.epoch++;
 
-            return advanceEpoch();
+            resolveEpochIfNecessary();
         }
     }
 
@@ -80,7 +90,7 @@ contract Checks is IChecks, CHECKS721 {
         uint256 count = tokenIds.length;
 
         // Initialize new epoch / resolve previous epoch.
-        advanceEpoch();
+        resolveEpochIfNecessary();
 
         // Burn the Editions for the given tokenIds & mint the Originals.
         for (uint256 i; i < count;) {

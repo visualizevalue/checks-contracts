@@ -32,7 +32,7 @@ interface IChecks {
     struct Epoch {
         uint128 randomness;
         uint64 revealBlock;
-        bool commited;
+        bool committed;
         bool revealed;
     }
 
