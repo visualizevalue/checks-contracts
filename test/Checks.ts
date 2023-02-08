@@ -372,9 +372,6 @@ describe('Checks', () => {
       const [burnId] = await composite(VV_TOKENS.slice(32, 64), checks, vv, 0, false)
       await fetchAndRender(burnId, checks, 'test_simulation_')
 
-      const simulated = await checks.simulateComposite(keepId, burnId)
-      console.log(simulated)
-
       const simulatedSVG = await checks.simulateCompositeSVG(keepId, burnId)
 
       await checks.connect(vv).composite(keepId, burnId)
