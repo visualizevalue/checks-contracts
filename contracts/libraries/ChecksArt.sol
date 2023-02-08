@@ -73,8 +73,10 @@ library ChecksArt {
         IChecks.StoredCheck memory stored = checks.all[tokenId];
         stored.divisorIndex = divisorIndex; // Override...
 
+        // Set up the source of randomness + seed for this Check.
         uint128 randomness = checks.epochs[stored.epoch].randomness;
-        check.seed = uint128(uint256(keccak256(abi.encodePacked(randomness, stored.seed))) % type(uint128).max);
+        check.seed = (uint256(keccak256(abi.encodePacked(randomness, stored.seed))) % type(uint128).max);
+
         check.stored = stored;
         check.isRevealed = randomness > 0;
         check.isRoot = divisorIndex == 0;
@@ -91,7 +93,7 @@ library ChecksArt {
         uint256 n = Utilities.random(check.seed, 160);
 
         return divisorIndex == 0
-            ? n < 20 ? 0 : uint8(1 + (n % 6))
+            ? n < 20 ? uint8(1 + (n % 6)) : 0
             : divisorIndex < 6
                 ? check.stored.gradients[divisorIndex - 1]
                 : 0;
@@ -100,16 +102,14 @@ library ChecksArt {
     function colorBandIndex(IChecks.Check memory check, uint8 divisorIndex) public pure returns (uint8) {
         uint256 n = Utilities.random(check.seed, 160);
 
-        uint8 index = n > 80 ? 0
-             : n > 40 ? 1
-             : n > 20 ? 2
-             : n > 10 ? 3
-             : n >  8 ? 4
-             : n >  2 ? 5
-             : 6;
-
         return divisorIndex == 0
-            ? index
+            ?   ( n > 80 ? 0
+                : n > 40 ? 1
+                : n > 20 ? 2
+                : n > 10 ? 3
+                : n >  8 ? 4
+                : n >  2 ? 5
+                : 6 )
             : divisorIndex < 6
                 ? check.stored.colorBands[divisorIndex - 1]
                 : 6;

@@ -36,7 +36,8 @@ export const deployChecksWithLibraries = async (ethers, editionAddress = process
       ChecksMetadata: checksMetadata.address,
     }
   })
-  const checks = await ChecksOriginals.deploy(editionAddress)
+  // const checks = await ChecksOriginals.deploy(editionAddress)
+  const checks = await ChecksOriginals.deploy()
   await checks.deployed()
   console.log(`     Deployed ChecksOriginals at ${checks.address}`)
 

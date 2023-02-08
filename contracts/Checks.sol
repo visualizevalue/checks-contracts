@@ -39,46 +39,10 @@ contract Checks is IChecks, CHECKS721 {
     Checks checks;
 
     /// @dev Initializes the Checks Originals contract and links the Edition contract.
-    constructor(address _checksEdition) {
-        editionChecks = IChecksEdition(_checksEdition/*0x34eEBEE6942d8Def3c125458D1a86e0A897fd6f9*/);
+    constructor() {
+        editionChecks = IChecksEdition(0x34eEBEE6942d8Def3c125458D1a86e0A897fd6f9);
         checks.day0 = uint32(block.timestamp);
         checks.epoch = 1;
-    }
-
-    function getEpoch() view public returns(uint256) {
-        return checks.epoch;
-    }
-
-    function getEpochData(uint256 index) view public returns(IChecks.Epoch memory) {
-        return checks.epochs[index];
-    }
-
-    /// @dev Based on the commit-reveal scheme proposed by MouseDev.
-    function resolveEpochIfNecessary() public {
-        IChecks.Epoch storage currentEpoch = checks.epochs[checks.epoch];
-
-        if (
-            // If epoch has not been committed,
-            currentEpoch.committed == false ||
-            // Or the reveal commitment timed out.
-            (currentEpoch.revealed == false && currentEpoch.revealBlock < block.number - 256)
-        ) {
-            // This means the epoch has not been committed, OR the epoch was committed but has expired.
-            // Set committed to true, and record the reveal block.
-            currentEpoch.revealBlock = uint64(block.number + 5);
-            currentEpoch.committed = true;
-
-        } else if (block.number > currentEpoch.revealBlock) {
-            // Epoch has been committed and is within range to be revealed.
-            // Set its randomness to the target block
-            // currentEpoch.randomness = uint128(uint256(blockhash(currentEpoch.revealBlock)) % (2 ** 128 - 1));
-            currentEpoch.randomness = 69;
-            currentEpoch.revealed = true;
-
-            checks.epoch++;
-
-            resolveEpochIfNecessary();
-        }
     }
 
     /// @notice Migrate Checks Editions to Checks Originals by burning the Editions.
@@ -110,7 +74,7 @@ contract Checks is IChecks, CHECKS721 {
             StoredCheck storage check = checks.all[id];
             check.day = Utilities.day(checks.day0, block.timestamp);
             check.epoch = uint32(checks.epoch);
-            check.seed = Utilities.seed16(id);
+            check.seed = uint16(id);
             check.divisorIndex = 0;
 
             // Mint the original.
@@ -189,12 +153,14 @@ contract Checks is IChecks, CHECKS721 {
     /// @dev The check at index 0 survives.
     function infinity(uint256[] calldata tokenIds) external {
         uint256 count = tokenIds.length;
-        if(count != 64) {
+
+        // Make sure we're allowed to mint the black check.
+        if (count != 64) {
             revert InvalidTokenCount();
         }
         for (uint256 i; i < count;) {
             uint256 id = tokenIds[i];
-            if (checks.all[id].divisorIndex != 6 || ! _isApprovedOrOwner(msg.sender, id)) {
+            if (checks.all[id].divisorIndex != 6) {
                 revert BlackCheck__InvalidCheck();
             }
             if (!_isApprovedOrOwner(msg.sender, id)) {
@@ -237,6 +203,46 @@ contract Checks is IChecks, CHECKS721 {
 
         // Keep track of supply.
         unchecked { ++checks.burned; }
+    }
+
+    /// @notice Initializes and closes epochs.
+    /// @dev Based on the commit-reveal scheme proposed by MouseDev.
+    function resolveEpochIfNecessary() public {
+        IChecks.Epoch storage currentEpoch = checks.epochs[checks.epoch];
+
+        if (
+            // If epoch has not been committed,
+            currentEpoch.committed == false ||
+            // Or the reveal commitment timed out.
+            (currentEpoch.revealed == false && currentEpoch.revealBlock < block.number - 256)
+        ) {
+            // This means the epoch has not been committed, OR the epoch was committed but has expired.
+            // Set committed to true, and record the reveal block:
+            currentEpoch.revealBlock = uint64(block.number + 5);
+            currentEpoch.committed = true;
+
+        } else if (block.number > currentEpoch.revealBlock) {
+            // Epoch has been committed and is within range to be revealed.
+            // Set its randomness to the target block hash.
+            currentEpoch.randomness = uint128(uint256(blockhash(currentEpoch.revealBlock)) % (2 ** 128 - 1));
+            currentEpoch.revealed = true;
+
+            checks.epoch++;
+
+            // Initialize the next epoch
+            resolveEpochIfNecessary();
+        }
+    }
+
+    /// @notice The identifier of the current epoch
+    function getEpoch() view public returns(uint256) {
+        return checks.epoch;
+    }
+
+    /// @notice Get the data for a given epoch
+    /// @param index The identifier of the epoch to fetch
+    function getEpochData(uint256 index) view public returns(IChecks.Epoch memory) {
+        return checks.epochs[index];
     }
 
     /// @notice Get the colors of all checks in a given token.
@@ -360,7 +366,7 @@ contract Checks is IChecks, CHECKS721 {
         Check memory burner = ChecksArt.getCheck(burnId, checks);
 
         // Pseudorandom gene manipulation in which the composite order doesn't matter.
-        uint256 randomizer = uint256(keeper.seed) + uint256(burner.seed);
+        uint256 randomizer = keeper.seed + burner.seed;
 
         // We try to force a gradient in ~20% of cases.
         gradient = Utilities.random(randomizer, 100) > 80

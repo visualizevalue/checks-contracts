@@ -10,8 +10,8 @@ library Utilities {
     }
 
     /// @dev Pseudorandom number based on input max bound
-    function random(uint256 input, uint256 max) public pure returns (uint256) {
-        return max - (uint256(keccak256(abi.encodePacked(input))) % max);
+    function random(uint256 input, uint256 _max) public pure returns (uint256) {
+        return _max - (uint256(keccak256(abi.encodePacked(input))) % _max);
     }
 
     /// @dev Convert an integer to a string

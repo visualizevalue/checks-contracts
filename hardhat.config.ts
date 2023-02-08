@@ -48,7 +48,7 @@ const config = {
     enabled: process.env.REPORT_GAS !== undefined,
     coinmarketcap: process.env.COINMARKETCAP_API_KEY,
     currency: "USD",
-    gasPrice: 15,
+    gasPrice: 20,
   },
   etherscan: {
     apiKey: process.env.ETHERSCAN_API_KEY,

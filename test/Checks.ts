@@ -41,6 +41,7 @@ describe('Checks', () => {
         .withArgs(JALIL, JALIL_VAULT, 1001)
 
       expect(await checks.totalSupply()).to.equal(1)
+      await mine(10)
 
       const tx = await checks.connect(jalil).mint([808], JALIL)
       await expect(tx)
