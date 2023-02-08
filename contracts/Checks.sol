@@ -208,7 +208,7 @@ contract Checks is IChecks, CHECKS721 {
     /// @notice Initializes and closes epochs.
     /// @dev Based on the commit-reveal scheme proposed by MouseDev.
     function resolveEpochIfNecessary() public {
-        IChecks.Epoch storage currentEpoch = checks.epochs[checks.epoch];
+        Epoch storage currentEpoch = checks.epochs[checks.epoch];
 
         if (
             // If epoch has not been committed,
@@ -227,9 +227,11 @@ contract Checks is IChecks, CHECKS721 {
             currentEpoch.randomness = uint128(uint256(blockhash(currentEpoch.revealBlock)) % (2 ** 128 - 1));
             currentEpoch.revealed = true;
 
-            checks.epoch++;
+            // Notify DAPPs about the new epoch.
+            emit NewEpoch(checks.epoch, currentEpoch.revealBlock);
 
             // Initialize the next epoch
+            checks.epoch++;
             resolveEpochIfNecessary();
         }
     }
@@ -241,7 +243,7 @@ contract Checks is IChecks, CHECKS721 {
 
     /// @notice Get the data for a given epoch
     /// @param index The identifier of the epoch to fetch
-    function getEpochData(uint256 index) view public returns(IChecks.Epoch memory) {
+    function getEpochData(uint256 index) view public returns(Epoch memory) {
         return checks.epochs[index];
     }
 
@@ -324,7 +326,7 @@ contract Checks is IChecks, CHECKS721 {
         _burn(burnId);
 
         // Notify DAPPs about the Sacrifice.
-        emit IChecks.Sacrifice(burnId, tokenId);
+        emit Sacrifice(burnId, tokenId);
         emit MetadataUpdate(tokenId);
     }
 
@@ -356,7 +358,7 @@ contract Checks is IChecks, CHECKS721 {
         _burn(burnId);
 
         // Notify DAPPs about the Composite.
-        emit IChecks.Composite(tokenId, burnId, ChecksArt.DIVISORS()[toKeep.divisorIndex]);
+        emit Composite(tokenId, burnId, ChecksArt.DIVISORS()[toKeep.divisorIndex]);
         emit MetadataUpdate(tokenId);
     }
 
@@ -369,8 +371,8 @@ contract Checks is IChecks, CHECKS721 {
         Check memory keeper = ChecksArt.getCheck(tokenId, checks);
         Check memory burner = ChecksArt.getCheck(burnId, checks);
 
-        // Pseudorandom gene manipulation in which the composite order doesn't matter.
-        uint256 randomizer = keeper.seed + burner.seed;
+        // Pseudorandom gene manipulation.
+        uint256 randomizer = uint256(keccak256(abi.encodePacked(keeper.seed, burner.seed)));
 
         // If at least one token has a gradient, we force it in ~20% of cases.
         gradient = Utilities.random(randomizer, 100) > 80

@@ -6,6 +6,7 @@ import { blackCheckFixture, mintedFixture } from './fixtures/mint'
 import { composite } from '../helpers/composite'
 import { JALIL, JALIL_TOKENS, JALIL_VAULT, VV, VV_TOKENS } from '../helpers/constants'
 import { fetchAndRender } from '../helpers/render'
+import { decodeBase64URI } from '../helpers/decode-uri'
 const { expect } = require('chai')
 const hre = require('hardhat')
 const ethers = hre.ethers
@@ -50,7 +51,7 @@ describe('Checks', () => {
         .to.emit(checks, 'Transfer')
         .withArgs(ethers.constants.AddressZero, JALIL, 808)
       const receipt = await tx.wait()
-      expect(receipt.events.length).to.equal(3) // Reset approval + burn transfer + new mint
+      expect(receipt.events.length).to.equal(4) // Reset approval + burn transfer + new mint + new epoch
 
       // Or multiple
       await expect(checks.connect(jalil).mint([44, 222], JALIL_VAULT))
@@ -339,6 +340,39 @@ describe('Checks', () => {
 
       const [singleId] = await composite(VV_TOKENS.slice(2, 66), checks, vv, 0, false)
       fs.writeFileSync(`test/dist/tokenuri-${singleId}`, await checks.tokenURI(singleId))
+    })
+
+    it('Should render metadata for unrevealed tokens', async () => {
+      const { checksEditions, checks } = await loadFixture(deployChecksMainnet)
+      const { jalil } = await loadFixture(impersonateAccounts)
+      await checksEditions.connect(jalil).setApprovalForAll(checks.address, true)
+
+      await checks.connect(jalil).mint([1001], JALIL_VAULT)
+
+      const metadataURI = await checks.tokenURI(1001)
+      expect(decodeBase64URI(metadataURI).attributes).to.deep.equal([
+        { trait_type: 'Revealed', value: 'No' },
+        { trait_type: 'Checks', value: '80' },
+        { trait_type: 'Day', value: '1' }
+      ])
+    })
+
+    it('Should render metadata for revealed tokens', async () => {
+      const { checksEditions, checks } = await loadFixture(deployChecksMainnet)
+      const { jalil } = await loadFixture(impersonateAccounts)
+      await checksEditions.connect(jalil).setApprovalForAll(checks.address, true)
+
+      await checks.connect(jalil).mint([1001], JALIL_VAULT)
+      await mine(5)
+      await checks.resolveEpochIfNecessary()
+
+      const afterReveal = decodeBase64URI(await checks.tokenURI(1001))
+      expect(afterReveal.attributes)
+        .to.not.have.deep.members([{ trait_type: 'Revealed', value: 'No' }])
+
+      expect(afterReveal.attributes.map(a => a.trait_type))
+        .to.have.members([ 'Color Band', 'Gradient', 'Speed', 'Shift', 'Checks', 'Day' ])
+        .but.not.include('Revealed')
     })
   })
 })

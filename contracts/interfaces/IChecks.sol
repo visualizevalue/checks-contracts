@@ -62,6 +62,11 @@ interface IChecks {
         uint256[] indexed burnedIds
     );
 
+    event NewEpoch(
+        uint256 indexed epoch,
+        uint64 indexed revealBlock
+    );
+
     error NotAllowed();
     error InvalidTokenCount();
     error BlackCheck__InvalidCheck();

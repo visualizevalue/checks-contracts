@@ -46,17 +46,20 @@ library ChecksMetadata {
                     Base64.encode(generateHTML(tokenId, svg)),
                     '",',
                 '"attributes": [',
-                    check.hasManyChecks
+                    check.isRevealed && check.hasManyChecks
                         ? trait('Color Band', colorBand(ChecksArt.colorBandIndex(check, check.stored.divisorIndex)), ',')
                         : '',
-                    check.hasManyChecks
+                    check.isRevealed && check.hasManyChecks
                         ? trait('Gradient', gradients(ChecksArt.gradientIndex(check, check.stored.divisorIndex)), ',')
                         : '',
-                    check.checksCount > 0
+                    check.isRevealed && check.checksCount > 0
                         ? trait('Speed', check.speed == 4 ? '2x' : check.speed == 2 ? '1x' : '0.5x', ',')
                         : '',
-                    check.checksCount > 0
+                    check.isRevealed && check.checksCount > 0
                         ? trait('Shift', check.direction == 0 ? 'IR' : 'UV', ',')
+                        : '',
+                    check.isRevealed == false
+                        ? trait('Revealed', 'No', ',')
                         : '',
                     trait('Checks', Utilities.uint2str(check.checksCount), ','),
                     trait('Day', Utilities.uint2str(check.stored.day), ''),
