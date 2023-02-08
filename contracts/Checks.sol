@@ -218,13 +218,18 @@ contract Checks is IChecks, CHECKS721 {
         ) {
             // This means the epoch has not been committed, OR the epoch was committed but has expired.
             // Set committed to true, and record the reveal block:
-            currentEpoch.revealBlock = uint64(block.number + 5);
+            currentEpoch.revealBlock = uint64(block.number + 50);
             currentEpoch.committed = true;
 
         } else if (block.number > currentEpoch.revealBlock) {
             // Epoch has been committed and is within range to be revealed.
             // Set its randomness to the target block hash.
-            currentEpoch.randomness = uint128(uint256(blockhash(currentEpoch.revealBlock)) % (2 ** 128 - 1));
+            currentEpoch.randomness = uint128(uint256(keccak256(
+                abi.encodePacked(
+                    blockhash(currentEpoch.revealBlock),
+                    block.difficulty
+                ))) % (2 ** 128 - 1)
+            );
             currentEpoch.revealed = true;
 
             // Notify DAPPs about the new epoch.
@@ -245,24 +250,6 @@ contract Checks is IChecks, CHECKS721 {
     /// @param index The identifier of the epoch to fetch
     function getEpochData(uint256 index) view public returns(Epoch memory) {
         return checks.epochs[index];
-    }
-
-    /// @notice Get the colors of all checks in a given token.
-    /// @param tokenId The token ID to get colors for.
-    /// @dev Consider using the ChecksArt and EightyColors Libraries
-    ///      in combination with the getCheck function to resolve this yourself.
-    function colors(uint256 tokenId) external view returns (string[] memory, uint256[] memory)
-    {
-        return ChecksArt.colors(ChecksArt.getCheck(tokenId, checks), checks);
-    }
-
-    /// @notice Render the SVG for a given token.
-    /// @param tokenId The token to render.
-    /// @dev Consider using the ChecksArt Library directly.
-    function svg(uint256 tokenId) external view returns (string memory) {
-        _requireMinted(tokenId);
-
-        return string(ChecksArt.generateSVG(ChecksArt.getCheck(tokenId, checks), checks));
     }
 
     /// @notice Simulate a composite.
@@ -294,6 +281,24 @@ contract Checks is IChecks, CHECKS721 {
     /// @param burnId The token to composite.
     function simulateCompositeSVG(uint256 tokenId, uint256 burnId) external view returns (string memory) {
         return string(ChecksArt.generateSVG(simulateComposite(tokenId, burnId), checks));
+    }
+
+    /// @notice Get the colors of all checks in a given token.
+    /// @param tokenId The token ID to get colors for.
+    /// @dev Consider using the ChecksArt and EightyColors Libraries
+    ///      in combination with the getCheck function to resolve this yourself.
+    function colors(uint256 tokenId) external view returns (string[] memory, uint256[] memory)
+    {
+        return ChecksArt.colors(ChecksArt.getCheck(tokenId, checks), checks);
+    }
+
+    /// @notice Render the SVG for a given token.
+    /// @param tokenId The token to render.
+    /// @dev Consider using the ChecksArt Library directly.
+    function svg(uint256 tokenId) external view returns (string memory) {
+        _requireMinted(tokenId);
+
+        return string(ChecksArt.generateSVG(ChecksArt.getCheck(tokenId, checks), checks));
     }
 
     /// @notice Get the metadata for a given token.
