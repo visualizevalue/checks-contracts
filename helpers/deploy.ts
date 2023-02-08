@@ -1,8 +1,8 @@
 export const deployChecksWithLibraries = async (ethers, editionAddress = process.env.EDITION_ADDRESS) => {
-  const Utilities = await ethers.getContractFactory('Utilities')
-  const utils = await Utilities.deploy()
-  await utils.deployed()
-  console.log(`     Deployed Utilities at ${utils.address}`)
+  // const Utilities = await ethers.getContractFactory('Utilities')
+  // const utils = await Utilities.deploy()
+  // await utils.deployed()
+  // console.log(`     Deployed Utilities at ${utils.address}`)
 
   const EightyColors = await ethers.getContractFactory('EightyColors')
   const eightyColors = await EightyColors.deploy()
@@ -11,7 +11,7 @@ export const deployChecksWithLibraries = async (ethers, editionAddress = process
 
   const ChecksArt = await ethers.getContractFactory('ChecksArt', {
     libraries: {
-      Utilities: utils.address,
+      // Utilities: utils.address,
       EightyColors: eightyColors.address,
     }
   })
@@ -21,7 +21,7 @@ export const deployChecksWithLibraries = async (ethers, editionAddress = process
 
   const ChecksMetadata = await ethers.getContractFactory('ChecksMetadata', {
     libraries: {
-      Utilities: utils.address,
+      // Utilities: utils.address,
       ChecksArt: checksArt.address,
     }
   })
@@ -31,7 +31,7 @@ export const deployChecksWithLibraries = async (ethers, editionAddress = process
 
   const ChecksOriginals = await ethers.getContractFactory('Checks', {
     libraries: {
-      Utilities: utils.address,
+      // Utilities: utils.address,
       ChecksArt: checksArt.address,
       ChecksMetadata: checksMetadata.address,
     }
