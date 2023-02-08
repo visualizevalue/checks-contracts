@@ -408,6 +408,15 @@ describe('Checks', () => {
       fs.writeFileSync(`test/dist/tokenuri-${singleId}`, await checks.tokenURI(singleId))
     })
 
+    it('Should render unrevealed tokens', async () => {
+      const { checksEditions, checks } = await loadFixture(deployChecksMainnet)
+      const { jalil } = await loadFixture(impersonateAccounts)
+      await checksEditions.connect(jalil).setApprovalForAll(checks.address, true)
+
+      await checks.connect(jalil).mint([1001], JALIL_VAULT)
+      await fetchAndRender(1001, checks, 'pre_reveal_')
+    })
+
     it('Should render metadata for unrevealed tokens', async () => {
       const { checksEditions, checks } = await loadFixture(deployChecksMainnet)
       const { jalil } = await loadFixture(impersonateAccounts)
