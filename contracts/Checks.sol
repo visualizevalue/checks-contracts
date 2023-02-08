@@ -264,11 +264,15 @@ contract Checks is IChecks, CHECKS721 {
         uint8 nextDivisor = index + 1;
         check = ChecksArt.getCheck(tokenId, nextDivisor, checks);
 
-        // Simulate composite in stored data
-        (uint8 gradient, uint8 colorBand) = _compositeGenes(tokenId, burnId);
+        // Simulate composite tree
         check.stored.composites[index] = uint16(burnId);
-        check.stored.colorBands[index] = colorBand;
-        check.stored.gradients[index] = gradient;
+
+        // Simulate visual composite in stored data if we have many checks
+        if (index < 5) {
+            (uint8 gradient, uint8 colorBand) = _compositeGenes(tokenId, burnId);
+            check.stored.colorBands[index] = colorBand;
+            check.stored.gradients[index] = gradient;
+        }
 
         // Simulate composite in memory data
         check.composite = !check.isRoot && index < 7 ? check.stored.composites[index] : 0;

@@ -20,7 +20,7 @@ task('mint-testing', 'Mint VV tokens')
     // Mint all
     await checks.connect(vv).mint(VV_TOKENS, VV)
 
-    await mine(5)
+    await mine(50)
     await (await checks.resolveEpochIfNecessary()).wait()
 
     console.log(`Minted all ${VV_TOKENS.length} Checks Originals`)

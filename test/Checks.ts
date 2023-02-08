@@ -42,7 +42,7 @@ describe('Checks', () => {
         .withArgs(JALIL, JALIL_VAULT, 1001)
 
       expect(await checks.totalSupply()).to.equal(1)
-      await mine(10)
+      await mine(50)
 
       const tx = await checks.connect(jalil).mint([808], JALIL)
       await expect(tx)
@@ -315,6 +315,75 @@ describe('Checks', () => {
       expect((await checks.getCheck(toKeep)).stored.day).to.equal(5)
     })
 
+    it('Should simulate a composite of check80s correctly', async () => {
+      const { checks, vv } = await loadFixture(mintedFixture)
+      const [toKeep, toBurn] = VV_TOKENS.slice(0, 2)
+
+      const simulatedSVG = await checks.simulateCompositeSVG(toKeep, toBurn)
+
+      await checks.connect(vv).composite(toKeep, toBurn)
+      const compositedSVG = await checks.svg(toKeep)
+
+      expect(simulatedSVG).to.equal(compositedSVG)
+    })
+
+    it('Should simulate a composite of check40s correctly', async () => {
+      const { checks, vv } = await loadFixture(mintedFixture)
+
+      const [keepId] = await composite(VV_TOKENS.slice(0, 2), checks, vv, 0, false)
+      await fetchAndRender(keepId, checks, 'test_simulation_')
+
+      const [burnId] = await composite(VV_TOKENS.slice(2, 4), checks, vv, 0, false)
+      await fetchAndRender(burnId, checks, 'test_simulation_')
+
+      const simulatedSVG = await checks.simulateCompositeSVG(keepId, burnId)
+
+      await checks.connect(vv).composite(keepId, burnId)
+      const compositedSVG = await checks.svg(keepId)
+
+      expect(simulatedSVG).to.equal(compositedSVG)
+      await fetchAndRender(keepId, checks, 'test_simulation_')
+    })
+
+    it.skip('Should simulate a composite of check5s correctly', async () => {
+      const { checks, vv } = await loadFixture(mintedFixture)
+
+      const [keepId] = await composite(VV_TOKENS.slice(0, 16), checks, vv, 0, false)
+      await fetchAndRender(keepId, checks, 'test_simulation_')
+
+      const [burnId] = await composite(VV_TOKENS.slice(16, 32), checks, vv, 0, false)
+      await fetchAndRender(burnId, checks, 'test_simulation_')
+
+      const simulatedSVG = await checks.simulateCompositeSVG(keepId, burnId)
+
+      await checks.connect(vv).composite(keepId, burnId)
+      const compositedSVG = await checks.svg(keepId)
+
+      expect(simulatedSVG).to.equal(compositedSVG)
+      await fetchAndRender(keepId, checks, 'test_simulation_')
+    })
+
+    it('Should simulate a composite of check4s correctly', async () => {
+      const { checks, vv } = await loadFixture(mintedFixture)
+
+      const [keepId] = await composite(VV_TOKENS.slice(0, 32), checks, vv, 0, false)
+      await fetchAndRender(keepId, checks, 'test_simulation_')
+
+      const [burnId] = await composite(VV_TOKENS.slice(32, 64), checks, vv, 0, false)
+      await fetchAndRender(burnId, checks, 'test_simulation_')
+
+      const simulated = await checks.simulateComposite(keepId, burnId)
+      console.log(simulated)
+
+      const simulatedSVG = await checks.simulateCompositeSVG(keepId, burnId)
+
+      await checks.connect(vv).composite(keepId, burnId)
+      const compositedSVG = await checks.svg(keepId)
+
+      expect(simulatedSVG).to.equal(compositedSVG)
+      await fetchAndRender(keepId, checks, 'test_simulation_')
+    })
+
     it.skip('Should allow to composite to, mint, and render the black check', async () => {
       const { checks, blackCheck, allTokens } = await loadFixture(blackCheckFixture)
 
@@ -363,7 +432,7 @@ describe('Checks', () => {
       await checksEditions.connect(jalil).setApprovalForAll(checks.address, true)
 
       await checks.connect(jalil).mint([1001], JALIL_VAULT)
-      await mine(5)
+      await mine(50)
       await checks.resolveEpochIfNecessary()
 
       const afterReveal = decodeBase64URI(await checks.tokenURI(1001))

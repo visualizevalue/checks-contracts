@@ -13,11 +13,12 @@ export const render = async (
 export const fetchAndRender = async (
   id: number,
   contract: Contract,
+  prepend: string = '',
 ) => {
   const check = await contract.getCheck(id)
 
   fs.writeFileSync(
-    `test/dist/${check.checksCount}_${id}_b${check.colorBand}_g${check.gradient}_s${check.speed}_d${check.direction}.svg`,
+    `test/dist/${prepend}${check.checksCount}_${id}_b${check.colorBand}_g${check.gradient}_s${check.speed}_d${check.direction}.svg`,
     await contract.svg(id)
   )
 }

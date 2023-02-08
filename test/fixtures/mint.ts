@@ -17,7 +17,7 @@ export async function mintedFixture() {
   await checksEditions.connect(vv).setApprovalForAll(checks.address, true)
   await checks.connect(vv).mint(VV_TOKENS, VV)
 
-  await mine(5)
+  await mine(50)
   await (await checks.resolveEpochIfNecessary()).wait()
 
   return {
