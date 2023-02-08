@@ -32,8 +32,6 @@ struct Epoch {
 contract WithEpochs {
     uint256 public epochIndex = 1;
 
-    uint256 internal fee = 0.01 ether;
-
     mapping(uint256 => Epoch) public epochs;
 
     function resolveEpochIfNeeded() public {
@@ -58,8 +56,6 @@ contract WithEpochs {
             currentEpoch.revealed = true;
 
             epochIndex++;
-
-            payable(msg.sender).transfer(fee);
 
             return resolveEpochIfNeeded();
         }
