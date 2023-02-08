@@ -32,6 +32,8 @@ struct Epoch {
 contract WithEpochs {
     uint256 public epochIndex = 1;
 
+    uint256 internal fee = 0.01 ether;
+
     mapping(uint256 => Epoch) public epochs;
 
     function resolveEpochIfNeeded() public {
@@ -46,16 +48,18 @@ contract WithEpochs {
             // This means the epoch has not been commited, OR the epoch was commited but has expired.
 
             // Set commited to true, and record the reveal block
-            currentEpoch.revealBlock = uint64(block.number + 5);
+            currentEpoch.revealBlock = uint64(block.number + 7200);
             currentEpoch.commited = true;
 
         } else if (block.number > currentEpoch.revealBlock) {
             // Epoch has been commited and is within range to be revealed.
             // Set its randomness to the target block
-            currentEpoch.randomness = uint128(uint256(blockhash(currentEpoch.revealBlock)) % (2 ** 128 - 1));
+            currentEpoch.randomness = uint128(uint256(keccak256(abi.encodePacked(blockhash(currentEpoch.revealBlock), block.difficulty))) % (2 ** 128 - 1));
             currentEpoch.revealed = true;
 
             epochIndex++;
+
+            payable(msg.sender).transfer(fee);
 
             return resolveEpochIfNeeded();
         }
