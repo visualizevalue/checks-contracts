@@ -48,7 +48,7 @@ contract WithEpochs {
             // This means the epoch has not been commited, OR the epoch was commited but has expired.
 
             // Set commited to true, and record the reveal block
-            currentEpoch.revealBlock = uint64(block.number + 7200);
+            currentEpoch.revealBlock = uint64(block.number + 15);
             currentEpoch.commited = true;
 
         } else if (block.number > currentEpoch.revealBlock) {
