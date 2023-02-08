@@ -270,20 +270,21 @@ contract Checks is IChecks, CHECKS721 {
         _requireMinted(tokenId);
         _requireMinted(burnId);
 
-        uint8 divisorIndex = checks.all[tokenId].divisorIndex;
+        // We want to simulate for the next divisor check count.
+        uint8 index = checks.all[tokenId].divisorIndex;
+        uint8 nextDivisor = index + 1;
+        check = ChecksArt.getCheck(tokenId, nextDivisor, checks);
 
-        check = ChecksArt.getCheck(tokenId, divisorIndex + 1, checks);
+        // Simulate composite in stored data
         (uint8 gradient, uint8 colorBand) = _compositeGenes(tokenId, burnId);
+        check.stored.composites[index] = uint16(burnId);
+        check.stored.colorBands[index] = colorBand;
+        check.stored.gradients[index] = gradient;
 
-        // Overrides
-        check.stored.gradients[divisorIndex] = gradient;
-        check.stored.colorBands[divisorIndex] = colorBand;
-        check.stored.composites[divisorIndex] = uint16(burnId);
-
-        // More overrides
-        check.composite = !check.isRoot && divisorIndex < 7 ? check.stored.composites[divisorIndex] : 0;
-        check.colorBand = ChecksArt.colorBandIndex(check, divisorIndex + 1);
-        check.gradient = ChecksArt.gradientIndex(check, divisorIndex + 1);
+        // Simulate composite in memory data
+        check.composite = !check.isRoot && index < 7 ? check.stored.composites[index] : 0;
+        check.colorBand = ChecksArt.colorBandIndex(check, nextDivisor);
+        check.gradient = ChecksArt.gradientIndex(check, nextDivisor);
     }
 
     /// @notice Render the SVG for a simulated composite.
@@ -302,7 +303,7 @@ contract Checks is IChecks, CHECKS721 {
         return ChecksMetadata.tokenURI(tokenId, checks);
     }
 
-    /// @notice Returns how many tokens this contract currently manages.
+    /// @notice Returns how many tokens this contract manages.
     function totalSupply() public view returns (uint256) {
         return checks.minted - checks.burned;
     }
@@ -342,8 +343,8 @@ contract Checks is IChecks, CHECKS721 {
         if (divisorIndex < 5) {
             (uint8 gradient, uint8 colorBand) = _compositeGenes(tokenId, burnId);
 
-            toKeep.gradients[divisorIndex] = gradient;
             toKeep.colorBands[divisorIndex] = colorBand;
+            toKeep.gradients[divisorIndex] = gradient;
         }
 
         // Composite our check
@@ -359,6 +360,9 @@ contract Checks is IChecks, CHECKS721 {
         emit MetadataUpdate(tokenId);
     }
 
+    /// @dev Composite the gradient and colorBand settings.
+    /// @param tokenId The token ID to keep.
+    /// @param burnId The token ID to burn.
     function _compositeGenes (uint256 tokenId, uint256 burnId) internal view
         returns (uint8 gradient, uint8 colorBand)
     {
@@ -368,7 +372,7 @@ contract Checks is IChecks, CHECKS721 {
         // Pseudorandom gene manipulation in which the composite order doesn't matter.
         uint256 randomizer = keeper.seed + burner.seed;
 
-        // We try to force a gradient in ~20% of cases.
+        // If at least one token has a gradient, we force it in ~20% of cases.
         gradient = Utilities.random(randomizer, 100) > 80
             ? randomizer % 2 == 0
                 ? Utilities.minGt0(keeper.gradient, burner.gradient)
@@ -376,10 +380,7 @@ contract Checks is IChecks, CHECKS721 {
             : Utilities.min(keeper.gradient, burner.gradient);
 
         // We breed the lower end average color band when breeding.
-        colorBand = Utilities.avg(
-            keeper.colorBand,
-            burner.colorBand
-        );
+        colorBand = Utilities.avg(keeper.colorBand, burner.colorBand);
     }
 
     /// @dev Make sure this is a valid request to composite/switch with multiple tokens.
