@@ -45,25 +45,7 @@ library ChecksMetadata {
                     '"data:text/html;base64,',
                     Base64.encode(generateHTML(tokenId, svg)),
                     '",',
-                '"attributes": [',
-                    check.isRevealed && check.hasManyChecks
-                        ? trait('Color Band', colorBand(ChecksArt.colorBandIndex(check, check.stored.divisorIndex)), ',')
-                        : '',
-                    check.isRevealed && check.hasManyChecks
-                        ? trait('Gradient', gradients(ChecksArt.gradientIndex(check, check.stored.divisorIndex)), ',')
-                        : '',
-                    check.isRevealed && check.checksCount > 0
-                        ? trait('Speed', check.speed == 4 ? '2x' : check.speed == 2 ? '1x' : '0.5x', ',')
-                        : '',
-                    check.isRevealed && check.checksCount > 0
-                        ? trait('Shift', check.direction == 0 ? 'IR' : 'UV', ',')
-                        : '',
-                    check.isRevealed == false
-                        ? trait('Revealed', 'No', ',')
-                        : '',
-                    trait('Checks', Utilities.uint2str(check.checksCount), ','),
-                    trait('Day', Utilities.uint2str(check.stored.day), ''),
-                ']',
+                '"attributes": [', attributes(check), ']',
             '}'
         );
 
@@ -72,6 +54,33 @@ library ChecksMetadata {
                 "data:application/json;base64,",
                 Base64.encode(metadata)
             )
+        );
+    }
+
+    /// @dev Render the JSON atributes for a given Checks token.
+    /// @param check The check to render.
+    function attributes(IChecks.Check memory check) public pure returns (bytes memory) {
+        bool showVisualAttributes = check.isRevealed && check.hasManyChecks;
+        bool showAnimationAttributes = check.isRevealed && check.checksCount > 0;
+
+        return abi.encodePacked(
+            showVisualAttributes
+                ? trait('Color Band', colorBand(ChecksArt.colorBandIndex(check, check.stored.divisorIndex)), ',')
+                : '',
+            showVisualAttributes
+                ? trait('Gradient', gradients(ChecksArt.gradientIndex(check, check.stored.divisorIndex)), ',')
+                : '',
+            showAnimationAttributes
+                ? trait('Speed', check.speed == 4 ? '2x' : check.speed == 2 ? '1x' : '0.5x', ',')
+                : '',
+            showAnimationAttributes
+                ? trait('Shift', check.direction == 0 ? 'IR' : 'UV', ',')
+                : '',
+            check.isRevealed == false
+                ? trait('Revealed', 'No', ',')
+                : '',
+            trait('Checks', Utilities.uint2str(check.checksCount), ','),
+            trait('Day', Utilities.uint2str(check.stored.day), '')
         );
     }
 
