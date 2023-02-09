@@ -9,10 +9,11 @@ import "hardhat-gas-reporter"
 import "solidity-coverage"
 
 import "./tasks/accounts"
+import "./tasks/composite"
 import "./tasks/deploy"
+import "./tasks/mine"
 import "./tasks/mint"
 import "./tasks/render"
-import "./tasks/composite"
 
 dotenv.config()
 
