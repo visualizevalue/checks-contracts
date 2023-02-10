@@ -49,3 +49,12 @@ task('mint-live', 'Mint original checks tokens')
       }
     }
   })
+
+task('reveal', 'Reveal tokens')
+  .addParam('contract', 'Checks contract address')
+  .setAction(async ({ contract }, hre) => {
+    const checks = await hre.ethers.getContractAt('Checks', contract)
+    const vv = await impersonate(VV, hre)
+    // Approve
+    await checks.connect(vv).resolveEpochIfNecessary()
+  })
