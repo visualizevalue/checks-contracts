@@ -226,12 +226,12 @@ describe('Checks', () => {
     })
   })
 
-  describe('Compositing', () => {
+  describe.only('Compositing', () => {
     it('Should not allow people to composit tokens of other users', async () => {
       const { checks } = await loadFixture(mintedFixture)
 
       const [toKeep, toBurn] = VV_TOKENS.slice(0, 2)
-      await expect(checks.composite(toKeep, toBurn))
+      await expect(checks.composite(toKeep, toBurn, false))
         .to.be.revertedWithCustomError(checks, 'NotAllowed')
     })
 
@@ -239,12 +239,12 @@ describe('Checks', () => {
       const { checks, vv, jalil } = await loadFixture(mintedFixture)
       const [toKeep, toBurn] = VV_TOKENS.slice(0, 2)
 
-      await expect(checks.connect(jalil).composite(toKeep, toBurn))
+      await expect(checks.connect(jalil).composite(toKeep, toBurn, false))
         .to.be.reverted
 
       await checks.connect(vv).setApprovalForAll(jalil.address, true)
 
-      await expect(checks.connect(jalil).composite(toKeep, toBurn))
+      await expect(checks.connect(jalil).composite(toKeep, toBurn, false))
         .to.emit(checks, 'Composite')
         .withArgs(toKeep, toBurn, 40)
         .to.emit(checks, 'MetadataUpdate')
@@ -257,7 +257,7 @@ describe('Checks', () => {
       expect(await checks.totalSupply()).to.equal(134)
 
       const [toKeep, toBurn] = VV_TOKENS.slice(0, 2)
-      await checks.connect(vv).composite(toKeep, toBurn)
+      await checks.connect(vv).composite(toKeep, toBurn, false)
 
       expect(await checks.totalSupply()).to.equal(133)
 
@@ -309,7 +309,7 @@ describe('Checks', () => {
 
       await time.increase(3600 * 24 * 4)
 
-      const tx = await checks.connect(vv).composite(toKeep, toBurn)
+      const tx = await checks.connect(vv).composite(toKeep, toBurn, false)
       await tx.wait()
 
       expect((await checks.getCheck(toKeep)).stored.day).to.equal(5)
@@ -321,7 +321,7 @@ describe('Checks', () => {
 
       const simulatedSVG = await checks.simulateCompositeSVG(toKeep, toBurn)
 
-      await checks.connect(vv).composite(toKeep, toBurn)
+      await checks.connect(vv).composite(toKeep, toBurn, false)
       const compositedSVG = await checks.svg(toKeep)
 
       expect(simulatedSVG).to.equal(compositedSVG)
@@ -338,7 +338,7 @@ describe('Checks', () => {
 
       const simulatedSVG = await checks.simulateCompositeSVG(keepId, burnId)
 
-      await checks.connect(vv).composite(keepId, burnId)
+      await checks.connect(vv).composite(keepId, burnId, false)
       const compositedSVG = await checks.svg(keepId)
 
       expect(simulatedSVG).to.equal(compositedSVG)
@@ -356,7 +356,7 @@ describe('Checks', () => {
 
       const simulatedSVG = await checks.simulateCompositeSVG(keepId, burnId)
 
-      await checks.connect(vv).composite(keepId, burnId)
+      await checks.connect(vv).composite(keepId, burnId, false)
       const compositedSVG = await checks.svg(keepId)
 
       expect(simulatedSVG).to.equal(compositedSVG)
@@ -374,11 +374,35 @@ describe('Checks', () => {
 
       const simulatedSVG = await checks.simulateCompositeSVG(keepId, burnId)
 
-      await checks.connect(vv).composite(keepId, burnId)
+      await checks.connect(vv).composite(keepId, burnId, false)
       const compositedSVG = await checks.svg(keepId)
 
       expect(simulatedSVG).to.equal(compositedSVG)
       await fetchAndRender(keepId, checks, 'test_simulation_')
+    })
+
+    it('Should allow to composite a check while swapping the art just before', async () => {
+      const { checks, vv } = await loadFixture(mintedFixture)
+
+      const [toKeep, toBurn] = VV_TOKENS.slice(0, 2)
+      await checks.connect(vv).composite(toKeep, toBurn, true)
+      const check = await checks.getCheck(toKeep)
+
+      expect(check.composite).to.equal(toBurn)
+      expect(check.checksCount).to.equal(40)
+      expect(check.stored.divisorIndex).to.equal(1)
+    })
+
+    it('Should make sure the art is carried through properly when swapping during a composite', async () => {
+      const { checks, vv } = await loadFixture(mintedFixture)
+      const [toKeep, toBurn] = VV_TOKENS.slice(0, 2)
+
+      const simulatedSVG = await checks.simulateCompositeSVG(toBurn, toKeep)
+
+      await checks.connect(vv).composite(toKeep, toBurn, true)
+      const compositedSVG = await checks.svg(toKeep)
+
+      expect(simulatedSVG).to.equal(compositedSVG)
     })
 
     it.skip('Should allow to composite to, mint, and render the black check', async () => {

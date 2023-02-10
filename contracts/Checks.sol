@@ -127,7 +127,16 @@ contract Checks is IChecks, CHECKS721 {
     /// @notice Composite one token into another. This mixes the visual and reduces the number of checks.
     /// @param tokenId The token ID to keep alive. Its visual will change.
     /// @param burnId The token ID to composite into the tokenId.
-    function composite(uint256 tokenId, uint256 burnId) external {
+    /// @param swap Swap the visuals before compositing.
+    function composite(uint256 tokenId, uint256 burnId, bool swap) external {
+        // Allow swapping the visuals before executing the composite.
+        if (swap) {
+            StoredCheck memory toKeep = checks.all[tokenId];
+
+            checks.all[tokenId] = checks.all[burnId];
+            checks.all[burnId] = toKeep;
+        }
+
         _composite(tokenId, burnId);
 
         unchecked { ++checks.burned; }

@@ -18,11 +18,12 @@ task('composite', 'Composite VV tokens')
   .addParam('contract', 'The Checks Contract address')
   .addParam('keep', 'The Check to keep')
   .addParam('burn', 'The Check to burn')
-  .setAction(async ({ contract, keep, burn }, hre) => {
+  .addParam('swap', 'The Check to burn')
+  .setAction(async ({ contract, keep, burn, swap = false }, hre) => {
     const checks = await hre.ethers.getContractAt('Checks', contract)
     const vv = await impersonate(VV, hre)
 
-    await checks.connect(vv).composite(keep, burn)
+    await checks.connect(vv).composite(keep, burn, swap)
 
     console.log(await checks.getCheck(keep))
   })
