@@ -115,7 +115,8 @@ library ChecksArt {
                 : n > 20 ? 2
                 : n > 10 ? 3
                 : n >  8 ? 4
-                : n % 2 == 0 ? 5 : 6 )
+                : n >  2 ? 5
+                : 6 )
             : divisorIndex < 6
                 ? check.stored.colorBands[divisorIndex - 1]
                 : 6;
