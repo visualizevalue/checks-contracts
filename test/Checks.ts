@@ -226,7 +226,7 @@ describe('Checks', () => {
     })
   })
 
-  describe.only('Compositing', () => {
+  describe('Compositing', () => {
     it('Should not allow people to composit tokens of other users', async () => {
       const { checks } = await loadFixture(mintedFixture)
 
