@@ -161,13 +161,13 @@ library ChecksArt {
                 // If we select initial non gradient colors, we just take random ones
                 // available in our color band
                 for (uint256 i = 1; i < checksCount;) {
-                    indexes[i] = (indexes[0] + Utilities.random(seed + i, colorBand)) % 80;
+                    indexes[i] = (indexes[0] + Utilities.random(seed + i, colorBand) - 1) % 80;
                     unchecked { ++i; }
                 }
             } else {
                 // If we have parent checks, we select our colors from their set
                 for (uint256 i = 1; i < checksCount;) {
-                    indexes[i] = Utilities.random(seed + i, possibleColorChoices - 1);
+                    indexes[i] = Utilities.random(seed + i, possibleColorChoices) - 1;
                     unchecked { ++i; }
                 }
             }
