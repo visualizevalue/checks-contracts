@@ -146,7 +146,7 @@ library ChecksArt {
 
         // We initialize our index and select the first color
         uint256[] memory indexes = new uint256[](checksCount);
-        indexes[0] = Utilities.random(seed, possibleColorChoices) - 1;
+        indexes[0] = Utilities.random(seed, possibleColorChoices);
 
         // If we have more than one check, continue selecting colors
         if (check.hasManyChecks) {
@@ -161,13 +161,13 @@ library ChecksArt {
                 // If we select initial non gradient colors, we just take random ones
                 // available in our color band
                 for (uint256 i = 1; i < checksCount;) {
-                    indexes[i] = (indexes[0] + Utilities.random(seed + i, colorBand) - 1) % 80;
+                    indexes[i] = (indexes[0] + Utilities.random(seed + i, colorBand)) % 80;
                     unchecked { ++i; }
                 }
             } else {
                 // If we have parent checks, we select our colors from their set
                 for (uint256 i = 1; i < checksCount;) {
-                    indexes[i] = Utilities.random(seed + i, possibleColorChoices) - 1;
+                    indexes[i] = Utilities.random(seed + i, possibleColorChoices);
                     unchecked { ++i; }
                 }
             }

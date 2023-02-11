@@ -2,21 +2,14 @@
 pragma solidity ^0.8.17;
 
 library Utilities {
-    /// @dev Create a pseudo random number
-    function seed16(uint256 nonce) internal view returns (uint16) {
-        return uint16(uint256(
-            keccak256(abi.encodePacked(msg.sender, block.coinbase, nonce))
-        ) % type(uint16).max);
-    }
-
-    /// @dev Pseudorandom number based on one input and max bounds
+    /// @dev Zero-index based pseudorandom number based on one input and max bound
     function random(uint256 input, uint256 _max) internal pure returns (uint256) {
-        return _max - (uint256(keccak256(abi.encodePacked(input))) % _max);
+        return (uint256(keccak256(abi.encodePacked(input))) % _max);
     }
 
-    /// @dev Pseudorandom number based on a salted input and max bounds
+    /// @dev Zero-index based salted pseudorandom number based on two inputs and max bound
     function random(uint256 input, string memory salt, uint256 _max) internal pure returns (uint256) {
-        return _max - (uint256(keccak256(abi.encodePacked(input, salt))) % _max);
+        return (uint256(keccak256(abi.encodePacked(input, salt))) % _max);
     }
 
     /// @dev Convert an integer to a string
