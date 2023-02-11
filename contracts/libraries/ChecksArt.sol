@@ -146,7 +146,7 @@ library ChecksArt {
 
         // We initialize our index and select the first color
         uint256[] memory indexes = new uint256[](checksCount);
-        indexes[0] = Utilities.random(seed, possibleColorChoices - 1);
+        indexes[0] = Utilities.random(seed, possibleColorChoices) - 1;
 
         // If we have more than one check, continue selecting colors
         if (check.hasManyChecks) {
