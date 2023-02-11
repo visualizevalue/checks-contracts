@@ -53,3 +53,4 @@ For faster runs of your tests and scripts, consider skipping ts-node's type chec
 
 ## Goerli
 - Checks Editions: `0x1c3F1129B7E90B52c7A83d9AB9CC389543C1eA77`
+- Checks Editions v2: `0xC5d10881c487cBB54FD080d78197831e4630c34B`
