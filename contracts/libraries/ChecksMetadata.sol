@@ -36,7 +36,7 @@ library ChecksMetadata {
         bytes memory metadata = abi.encodePacked(
             '{',
                 '"name": "Checks ', Utilities.uint2str(tokenId), '",',
-                '"description": "This artwork is notable.",',
+                '"description": "This artwork may or may not be notable.",',
                 '"image": ',
                     '"data:image/svg+xml;base64,',
                     Base64.encode(svg),
