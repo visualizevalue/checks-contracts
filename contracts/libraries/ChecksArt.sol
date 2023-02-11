@@ -107,15 +107,15 @@ library ChecksArt {
     /// @param check The check we want to get the color band for.
     /// @param divisorIndex The check divisor in question.
     function colorBandIndex(IChecks.Check memory check, uint8 divisorIndex) public pure returns (uint8) {
-        uint256 n = Utilities.random(check.seed, 'band', 160);
+        uint256 n = Utilities.random(check.seed, 'band', 180);
 
         return divisorIndex == 0
             ?   ( n > 80 ? 0
                 : n > 40 ? 1
                 : n > 20 ? 2
                 : n > 10 ? 3
-                : n >  8 ? 4
-                : n >  2 ? 5
+                : n >  4 ? 4
+                : n >  1 ? 5
                 : 6 )
             : divisorIndex < 6
                 ? check.stored.colorBands[divisorIndex - 1]
