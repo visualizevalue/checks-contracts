@@ -96,7 +96,7 @@ library ChecksMetadata {
     /// @param bandIndex The index of the color band.
     function colorBand(uint8 bandIndex) public pure returns (string memory) {
         return [
-            '100 Percent', '50 Percent', '25 Percent', '12.5 Percent', '6.25 Percent', '4 Percent', '1.25 Percent'
+            'Eighty', 'Sixty', 'Forty', 'Twenty', 'Ten', 'Five', 'One'
         ][bandIndex];
     }
 

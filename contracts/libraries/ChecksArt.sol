@@ -42,7 +42,7 @@ library ChecksArt {
 
     /// @dev The different color band sizes that we use for the art.
     function COLOR_BANDS() public pure returns (uint8[7] memory) {
-        return [ 80, 40, 20, 10, 5, 4, 1 ];
+        return [ 80, 60, 40, 20, 10, 5, 1 ];
     }
 
     /// @dev The gradient increment steps.
@@ -107,7 +107,7 @@ library ChecksArt {
     /// @param check The check we want to get the color band for.
     /// @param divisorIndex The check divisor in question.
     function colorBandIndex(IChecks.Check memory check, uint8 divisorIndex) public pure returns (uint8) {
-        uint256 n = Utilities.random(check.seed, 'band', 180);
+        uint256 n = Utilities.random(check.seed, 'band', 120);
 
         return divisorIndex == 0
             ?   ( n > 80 ? 0
