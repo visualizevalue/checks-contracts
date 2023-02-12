@@ -95,8 +95,6 @@ contract Checks is IChecks, CHECKS721 {
     /// @notice Get a specific check with its genome settings.
     /// @param tokenId The token ID to fetch.
     function getCheck(uint256 tokenId) external view returns (Check memory check) {
-        _requireMinted(tokenId);
-
         return ChecksArt.getCheck(tokenId, checks);
     }
 
@@ -309,8 +307,6 @@ contract Checks is IChecks, CHECKS721 {
     /// @param tokenId The token to render.
     /// @dev Consider using the ChecksArt Library directly.
     function svg(uint256 tokenId) external view returns (string memory) {
-        _requireMinted(tokenId);
-
         return string(ChecksArt.generateSVG(ChecksArt.getCheck(tokenId, checks), checks));
     }
 
