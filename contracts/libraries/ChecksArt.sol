@@ -1,8 +1,8 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-import "./EightyColors.sol";
 import "../interfaces/IChecks.sol";
+import "./EightyColors.sol";
 import "./Utilities.sol";
 
 /**
