@@ -22,11 +22,13 @@ contract Compositor {
     /// @notice Composite multiple checks to one remaining.
     /// @param tokenIds The token IDs to composite. The first one will be the keeper.
     function composite(uint256[] calldata tokenIds) external {
-        uint256 amount = tokenIds.length;
+        // Make sure we have a compositable number of tokens.
+        _checkAmount(tokenIds.length);
 
-        _checkAmount(amount);
+        // Make sure all tokens are owned by the current user.
         _checkOwnership(tokenIds);
 
+        // Perform the composite Recursively.
         _composite(tokenIds);
     }
 
@@ -71,3 +73,7 @@ contract Compositor {
         }
     }
 }
+
+
+
+
