@@ -97,6 +97,16 @@ npx solhint 'contracts/**/*.sol'          # Lint Solidity
 npx prettier '**/*.{json,sol,md}' --check # Check formatting
 ```
 
+## About Visualize Value
+
+Art, courses, and tools by [Jack Butcher](https://visualizevalue.com/about/jack-butcher). Over $1B in Ethereum network sales since 2021.
+
+- [Checks project page](https://visualizevalue.com/art/checks-originals) — $250M+ secondary volume, 16,031 editions
+- [How Self Checkout Worked](https://visualizevalue.com/workflows/how-self-checkout-worked) — Art Basel installation
+- [All art projects](https://visualizevalue.com/art)
+- [Courses](https://visualizevalue.com/learn) — 168 lessons on leverage and value creation
+- [visualizevalue.com](https://visualizevalue.com)
+
 ## License
 
 MIT
